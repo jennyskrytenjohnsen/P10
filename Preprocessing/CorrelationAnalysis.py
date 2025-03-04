@@ -18,11 +18,13 @@ features = ["age", "height", "icu_days", "weight", "bmi"]  # Replace with actual
 # Drop rows with missing values for selected features
 df_features = df_clinical[features].dropna()
 
-# Compute the correlation matrix
-correlation_matrix = df_features.corr()
+# Compute the correlation matrix using Spearman's correlation
+correlation_matrix = df_features.corr(method='spearman')
 
 # --- Heatmap of the Correlation Matrix ---
 plt.figure(figsize=(8, 6))
 sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5, annot_kws={"size": 10})
-plt.title("Correlation Matrix of Selected Features")
+plt.title("Spearman's Correlation Matrix of Selected Features")
 plt.show()
+
+print(correlation_matrix)
