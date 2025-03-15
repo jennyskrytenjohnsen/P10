@@ -6,3 +6,7 @@ Master thesis project. Prediction of ICU admission
 ```
 pip install -r requirements.txt
 ```
+### To see python packages version
+```
+    pip list
+```
