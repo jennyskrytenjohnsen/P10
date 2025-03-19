@@ -21,28 +21,30 @@ print(df_clinical.info())
 print("Laboratory Dataset Overview:")
 print(df_lab.info())
 
-# Filter lab data to get only 'bun' results
-df_bun = df_lab[df_lab['name'].str.contains("bun", case=False, na=False)]
-
-# Average 'bun' results if multiple records exist for the same patient
-df_bun_avg = df_bun.groupby("caseid", as_index=False)["result"].mean()
-df_bun_avg.rename(columns={"result": "bun_avg"}, inplace=True)
-
-# Filter lab data to get only 'k' results
-df_k = df_lab[df_lab['name'].str.contains("k", case=False, na=False)]
-
-# Average 'k' results if multiple records exist for the same patient
-df_k_avg = df_k.groupby("caseid", as_index=False)["result"].mean()
-df_k_avg.rename(columns={"result": "k_avg"}, inplace=True)
-
-# Extract 'preop_cr' value for each patient
+# Extract relevant clinical variables for each patient
 df_preop_cr = df_clinical[['caseid', 'preop_cr']].dropna()
+df_preop_alb = df_clinical[['caseid', 'preop_alb']].dropna()
+df_preop_k = df_clinical[['caseid', 'preop_k']].dropna()
+df_preop_na = df_clinical[['caseid', 'preop_na']].dropna()
+df_preop_bun = df_clinical[['caseid', 'preop_bun']].dropna()
 
-# Merge datasets on 'caseid'
-df_merged = df_preop_cr.merge(df_bun_avg, on='caseid').merge(df_k_avg, on='caseid')
+# Filter lab data for 'gfr' where 'dt' column is negative
+df_gfr = df_lab[df_lab['name'].str.contains("gfr", case=False, na=False)]
+df_gfr_negative_dt = df_gfr[df_gfr['dt'] < 0]
+
+# Average 'gfr' results for each patient if multiple records exist
+df_gfr_avg = df_gfr_negative_dt.groupby("caseid", as_index=False)["result"].mean()
+df_gfr_avg.rename(columns={"result": "gfr_avg"}, inplace=True)
+
+# Merge all clinical data
+df_clinical_merged = df_preop_cr.merge(df_preop_alb, on='caseid')\
+                                 .merge(df_preop_k, on='caseid')\
+                                 .merge(df_preop_na, on='caseid')\
+                                 .merge(df_preop_bun, on='caseid')\
+                                 .merge(df_gfr_avg, on='caseid')
 
 # Compute the correlation matrix using Spearman's correlation
-correlation_matrix = df_merged[['preop_cr', 'bun_avg', 'k_avg']].corr(method='spearman')
+correlation_matrix = df_clinical_merged[['preop_cr', 'preop_alb', 'preop_k', 'preop_na', 'preop_bun', 'gfr_avg']].corr(method='spearman')
 
 # Plot the correlation matrix
 plt.figure(figsize=(6, 4))
