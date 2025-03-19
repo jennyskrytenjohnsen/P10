@@ -8,23 +8,44 @@ import seaborn as sns  # For better heatmap visualizations
 clinical_data_url = "https://api.vitaldb.net/cases"  # Replace with correct URL for your clinical data
 df_clinical = pd.read_csv(clinical_data_url)
 
-# Display an overview of the dataset
-print("Dataset Overview:")
-print(df_clinical.info())  # Shows column names, data types, and missing values
+# Load laboratory dataset from the VitalDB API
+lab_data_url = "https://api.vitaldb.net/labs"
+df_lab = pd.read_csv(lab_data_url)
 
-# Specify the five features you want to analyze (adjust names as needed)
-features = ["age", "height", "icu_days", "weight", "bmi"]  # Replace with actual column names
+# Display an overview of both datasets
+print("Clinical Dataset Overview:")
+print(df_clinical.info())
 
-# Drop rows with missing values for selected features
-df_features = df_clinical[features].dropna()
+print("Laboratory Dataset Overview:")
+print(df_lab.info())
+
+# Filter lab data to get only 'aptt' results
+df_aptt = df_lab[df_lab['name'].str.contains("aptt", case=False, na=False)]
+
+# Average 'aptt' results if multiple records exist for the same patient
+df_aptt_avg = df_aptt.groupby("caseid", as_index=False)["result"].mean()
+df_aptt_avg.rename(columns={"result": "aptt_avg"}, inplace=True)
+
+# Filter lab data to get only 'ptsec' results
+df_ptsec = df_lab[df_lab['name'].str.contains("ptsec", case=False, na=False)]
+
+# Average 'ptsec' results if multiple records exist for the same patient
+df_ptsec_avg = df_ptsec.groupby("caseid", as_index=False)["result"].mean()
+df_ptsec_avg.rename(columns={"result": "ptsec_avg"}, inplace=True)
+
+# Extract 'preop_htn' value for each patient
+df_preop_htn = df_clinical[['caseid', 'preop_htn']].dropna()
+
+# Merge datasets on 'caseid'
+df_merged = df_preop_htn.merge(df_aptt_avg, on='caseid').merge(df_ptsec_avg, on='caseid')
 
 # Compute the correlation matrix using Spearman's correlation
-correlation_matrix = df_features.corr(method='spearman')
+correlation_matrix = df_merged[['preop_htn', 'aptt_avg', 'ptsec_avg']].corr(method='spearman')
 
-# --- Heatmap of the Correlation Matrix ---
-plt.figure(figsize=(8, 6))
-sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5, annot_kws={"size": 10})
-plt.title("Spearman's Correlation Matrix of Selected Features")
+# Plot the correlation matrix
+plt.figure(figsize=(6, 4))
+sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5)
+plt.title("Spearman's Correlation Matrix")
 plt.show()
 
 print(correlation_matrix)
