@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns  # For better heatmap visualizations
 
+### PREOPERATIVE CIRCULATORY VARIABLES ###
+
 # Load clinical dataset from the VitalDB API
 clinical_data_url = "https://api.vitaldb.net/cases"  # Replace with correct URL for your clinical data
 df_clinical = pd.read_csv(clinical_data_url)
@@ -44,7 +46,7 @@ correlation_matrix = df_merged[['preop_htn', 'aptt_avg', 'ptsec_avg']].corr(meth
 
 # Plot the correlation matrix
 plt.figure(figsize=(6, 4))
-sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5)
+sns.heatmap(correlation_matrix, cmap="coolwarm", fmt=".2f", linewidths=0.5)
 plt.title("Spearman's Correlation Matrix")
 plt.show()
 
