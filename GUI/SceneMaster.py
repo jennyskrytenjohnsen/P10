@@ -76,6 +76,6 @@ if __name__ == '__main__':
     ctk.set_appearance_mode("light")  
     ctk.set_default_color_theme("green") 
     app = SceneMaster()
-    app.geometry("400x500+10+20") # 6:19 aspect ratio på mobiler
-    app.title("InspiroTrack")
+    app.geometry("1530x750+1+2") 
+    app.title("SurgiCare")
     app.mainloop()
