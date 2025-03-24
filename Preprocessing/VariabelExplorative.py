@@ -45,8 +45,8 @@ plt.show()
 
 # --- Histogram of var1 ---
 plt.figure(figsize=(8, 5))
-plt.hist(df_no_icu[var1], bins=20, color='red', alpha=0.7, label='No ICU')
-plt.hist(df_icu[var1], bins=20, color='blue', alpha=0.7, label='ICU')
+plt.hist(df_no_icu[var1], bins=40, color='red', alpha=0.7, label='No ICU')
+plt.hist(df_icu[var1], bins=40, color='blue', alpha=0.7, label='ICU')
 plt.xlabel(var1)
 plt.ylabel("Frequency")
 plt.title(f"Histogram of {var1}")
