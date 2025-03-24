@@ -1,7 +1,7 @@
 import tkinter as tk
 import customtkinter as ctk
 
-class Level1ScreenView(ctk.CTkFrame):
+class Level2ScreenView(ctk.CTkFrame):
     # Constructor
     def __init__(self, parent, controller):
         # Atributter
@@ -37,24 +37,22 @@ class Level1ScreenView(ctk.CTkFrame):
         self.loginbutton = ctk.CTkButton(master=self, text="Front page", command=self.controller.loginbutton_function)
         self.loginbutton.place(relx=0.05, rely=0.03, anchor=ctk.CENTER)
 
-        self.createaccount_button = ctk.CTkButton(master=self, text="View values", command=self.controller.goto_create_account_screen)
+        self.createaccount_button = ctk.CTkButton(master=self, text="Hide values", command=self.controller.goto_create_account_screen)
         self.createaccount_button.place(relx=0.95, rely=0.03, anchor=ctk.CENTER)
 
 
-class Level1ScreenController():
+class Level2ScreenController():
     # Constructor
     def __init__(self, parent):
         self.parent = parent
-        self.view = Level1ScreenView(parent=self.parent, controller=self)
-       
-    # VI SKAL HAVE EN GOTO_SCENE / create account scene eller home scene funktion
+        self.view = Level2ScreenView(parent=self.parent, controller=self)
    
     def loginbutton_function(self):
         self.parent.show_scene("MainScreen")
 
     
     def goto_create_account_screen(self):
-        self.parent.show_scene("Level2Scene")
+        self.parent.show_scene("Level1Scene")
 
 
     def close(self):
