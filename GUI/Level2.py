@@ -34,7 +34,7 @@ class Level2ScreenView(ctk.CTkFrame):
         self.inspirotracktext = ctk.CTkLabel(master=self, text="Perioperative", font=("TkDefaultFont", 14))
         self.inspirotracktext.place(relx=0.03, rely=0.7, anchor=ctk.CENTER)
 
-        self.loginbutton = ctk.CTkButton(master=self, text="Front page", command=self.controller.loginbutton_function)
+        self.loginbutton = ctk.CTkButton(master=self, text="Front page \U0001F3E0", command=self.controller.loginbutton_function)
         self.loginbutton.place(relx=0.05, rely=0.03, anchor=ctk.CENTER)
 
         self.createaccount_button = ctk.CTkButton(master=self, text="Hide values", command=self.controller.goto_create_account_screen)

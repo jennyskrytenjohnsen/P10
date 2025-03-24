@@ -20,8 +20,8 @@ class MainScreenView(ctk.CTkFrame):
         self.createaccount_button.place(relx=0.05, rely=0.03, anchor=ctk.CENTER)
 
         self.canvas = ctk.CTkCanvas(self, width=500, height=500, background='#DBDBDB', borderwidth=0, highlightthickness=0)
-        self.circle_with_number = self.canvas.create_oval(50, 50, 500, 500, outline="black", fill="red")
-        self.risk_score = ctk.CTkLabel(self.canvas, font=("Helvetica", 50), fg_color="red")
+        self.circle_with_number = self.canvas.create_oval(50, 50, 500, 500, outline="red", fill="red")
+        self.risk_score = ctk.CTkLabel(self.canvas, font=("Helvetica", 50), fg_color="red", text_color="white")
         self.risk_score.place(relx=0.29, rely=0.35)
         self.canvas.place(relx=0.5, rely=0.4, anchor=ctk.CENTER)
 
