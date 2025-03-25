@@ -2,6 +2,7 @@ import customtkinter as ctk
 from MainScreen import MainScreenController
 from Level1 import Level1ScreenController
 from Level2 import Level2ScreenController
+from SelectPatient import SelectPatientController
 
 class SceneMaster(ctk.CTk):
     # constructor
@@ -31,7 +32,10 @@ class SceneMaster(ctk.CTk):
         elif scene_name == "Level1Scene":
             self.current_scene = Level1ScreenController(self)
         elif scene_name == "Level2Scene":
-            self.current_scene = Level2ScreenController(self)
+            self.current_scene = Level2ScreenController(self) 
+        elif scene_name == "SelectPatientScene":
+            self.current_scene = SelectPatientController(self)
+            # SelectPatientScene
 
         # change scene to the requested scene
         self.current_scene.view.pack(fill="both", expand=True)

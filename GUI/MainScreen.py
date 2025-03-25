@@ -16,14 +16,23 @@ class MainScreenView(ctk.CTkFrame):
         self.loginbutton = ctk.CTkButton(master=self, text="View variables", command=self.controller.level1button_function)
         self.loginbutton.place(relx=0.95, rely=0.03, anchor=ctk.CENTER)
 
-        self.createaccount_button = ctk.CTkButton(master=self, text="Select patient", command=self.controller.goto_level2_screen)
+        self.createaccount_button = ctk.CTkButton(master=self, text="Select patient", command=self.controller.goto_selectPatient_screen)
         self.createaccount_button.place(relx=0.05, rely=0.03, anchor=ctk.CENTER)
+
+        # self.canvas = ctk.CTkCanvas(self, width=500, height=500, background='#DBDBDB', borderwidth=0, highlightthickness=0)
+        # self.circle_with_number = self.canvas.create_oval(50, 50, 500, 500, outline="red", fill="red")
+        # self.risk_score = ctk.CTkLabel(self.canvas, font=("Helvetica", 50), fg_color="red", text_color="white")
+        # self.risk_score.place(relx=0.29, rely=0.35)
+        # self.canvas.place(relx=0.5, rely=0.4, anchor=ctk.CENTER)
 
         self.canvas = ctk.CTkCanvas(self, width=500, height=500, background='#DBDBDB', borderwidth=0, highlightthickness=0)
         self.circle_with_number = self.canvas.create_oval(50, 50, 500, 500, outline="red", fill="red")
-        self.risk_score = ctk.CTkLabel(self.canvas, font=("Helvetica", 50), fg_color="red", text_color="white")
-        self.risk_score.place(relx=0.29, rely=0.35)
+        self.risk_score = ctk.CTkLabel(self.canvas, text="80%", font=("Helvetica", 90), fg_color="red", text_color="white")
+        self.risk_score.place(relx=0.38, rely=0.35)
+        self.risk_score_text = ctk.CTkLabel(self.canvas, text="ICU admission risk", font=("Helvetica", 30), fg_color="red", text_color="white")
+        self.risk_score_text.place(relx=0.27, rely=0.65)
         self.canvas.place(relx=0.5, rely=0.4, anchor=ctk.CENTER)
+
 
 
 class MainScreenController():
@@ -35,8 +44,8 @@ class MainScreenController():
     def level1button_function(self):
         self.parent.show_scene("Level1Scene")
 
-    def goto_level2_screen(self):
-        self.parent.show_scene("Level2Scene")
+    def goto_selectPatient_screen(self):
+        self.parent.show_scene("SelectPatientScene")
     
     def close(self):
         print("do nothing?")
