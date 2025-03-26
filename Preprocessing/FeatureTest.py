@@ -18,7 +18,7 @@ track_list_url = "https://api.vitaldb.net/trks"
 df_tracklist = pd.read_csv(track_list_url)
 
 # List of special variables you're interested in (update as necessary)
-special_variables = ["Orchestra/NEPI_VOL"]  # Example; you can add more special variables
+special_variables = ["Orchestra/NEPI_VOL", "Orchestra/EPI_VOL"]  # Include both NEPI_VOL and EPI_VOL
 
 # Initialize a list to store the results for each caseid
 results = []
@@ -35,12 +35,12 @@ def collect_track_last_value():
         # Initialize value_vaso to 0 (default)
         value_vaso = 0
 
-        # Check if 'Orchestra/NEPI_VOL' data is available for this caseid
+        # Check if 'Orchestra/NEPI_VOL' or 'Orchestra/EPI_VOL' data is available for this caseid
         track_found = df_tracklist[df_tracklist['caseid'] == caseid]
         
         if not track_found.empty:
             for _, track_row in track_found.iterrows():
-                if track_row['tname'] in special_variables:
+                if track_row['tname'] == "Orchestra/NEPI_VOL":
                     trackidentifier = track_row["tid"]
                     trackdata_url = f"https://api.vitaldb.net/{trackidentifier}"
 
@@ -63,11 +63,37 @@ def collect_track_last_value():
                     if "Orchestra/NEPI_VOL" in trackdata.columns and not trackdata["Orchestra/NEPI_VOL"].isna().all():
                         # Get the last recorded value from the 'Orchestra/NEPI_VOL' column
                         last_value_vaso = trackdata["Orchestra/NEPI_VOL"].iloc[-1]
-                        # Determine the value to store (1 if not 0, 0 if 0)
-                        value_vaso = 1 if last_value_vaso != 0 else 0
-                    else:
-                        value_vaso = 0  # No data for 'Orchestra/NEPI_VOL'
-        
+                        # Set value_vaso to 1 if last value is not 0
+                        if last_value_vaso != 0:
+                            value_vaso = 1
+
+                if track_row['tname'] == "Orchestra/EPI_VOL":
+                    trackidentifier = track_row["tid"]
+                    trackdata_url = f"https://api.vitaldb.net/{trackidentifier}"
+
+                    try:
+                        response = requests.get(trackdata_url, timeout=10)
+                        response.raise_for_status()
+                    except requests.exceptions.Timeout:
+                        print(f"Timeout error: Cannot get {track_row['tname']} ({trackdata_url})")
+                        continue  # Skip to next track
+
+                    try:
+                        # Convert API response into a pandas DataFrame
+                        trackdata = pd.read_csv(io.StringIO(response.text))
+                        if trackdata.empty:
+                            continue
+                    except:
+                        continue  # Skip if there is an issue reading the track data
+
+                    # Check if the 'Orchestra/EPI_VOL' column exists and has values
+                    if "Orchestra/EPI_VOL" in trackdata.columns and not trackdata["Orchestra/EPI_VOL"].isna().all():
+                        # Get the last recorded value from the 'Orchestra/EPI_VOL' column
+                        last_value_epi = trackdata["Orchestra/EPI_VOL"].iloc[-1]
+                        # Set value_vaso to 1 if last value is not 0
+                        if last_value_epi != 0:
+                            value_vaso = 1
+
         # Get the value of intraop_eph from the clinical dataset by matching the caseid
         intraop_eph = row.get("intraop_eph", pd.NA)
 
