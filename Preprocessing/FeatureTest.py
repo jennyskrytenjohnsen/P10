@@ -2,114 +2,59 @@ import vitaldb
 import requests
 import pandas as pd
 import io
+import matplotlib.pyplot as plt
 
 # Load clinical dataset from the VitalDB API
 clinical_data_url = "https://api.vitaldb.net/cases"
 df_clinical = pd.read_csv(clinical_data_url)
 
-# Extract 'intraop_eph' column and count missing values
-missing_eph = df_clinical["intraop_eph"].isna().sum()
-print(f"Missing values in 'intraop_eph': {missing_eph}")
+# Access intraop_rbc, intraop_ffp, and icu_days columns
+intraop_rbc = df_clinical['intraop_rbc']
+intraop_ffp = df_clinical['intraop_ffp']
+icu_days = df_clinical['icu_days']
 
-# Extract 'intraop_phe' column and count missing values
-missing_phe = df_clinical["intraop_phe"].isna().sum()
-print(f"Missing values in 'intraop_phe': {missing_phe}")
+# Create a new column to categorize whether the patient went to ICU (ICU or No ICU)
+df_clinical['icu_status'] = icu_days.apply(lambda x: 'ICU' if x != 0 else 'No ICU')
 
-# Load tracklist data from the VitalDB API
-track_list_url = "https://api.vitaldb.net/trks"
-df_tracklist = pd.read_csv(track_list_url)
+# Group the data by ICU status
+grouped = df_clinical.groupby('icu_status')
 
-# List of special variables you're interested in (update as necessary)
-special_variables = [
-    "Orchestra/NEPI_VOL",
-    "Orchestra/EPI_VOL",
-    "Orchestra/PHEN_VOL",
-    "Orchestra/VASO_VOL",
-    "Orchestra/DOPA_VOL",
-    "Orchestra/DOBU_VOL",
-    "Orchestra/MRN_VOL"
-]
+# Calculate total transfusion per group
+total_transfusion = grouped[['intraop_rbc', 'intraop_ffp']].sum()
 
-# Initialize a list to store the results for each caseid
-results = []
+# Count number of patients in each group
+patient_counts = grouped.size()
 
-def collect_track_last_value():
-    # Iterate over each caseid in the clinical dataset
-    for index, row in df_clinical.iterrows():
-        caseid = row["caseid"]
+# Normalize transfusion by number of patients
+normalized_transfusion = total_transfusion.div(patient_counts, axis=0)
 
-        # Initialize the values for the current caseid
-        value_vaso = 0  # Default to 0 for value_vaso
-        value_eph = 0  # Default to 0 for value_eph
-        value_phe = 0  # Default to 0 for value_phe
-        value_ino = 0  # Default to 0 for value_ino
+# Reorder rows so that 'No ICU' is first
+normalized_transfusion = normalized_transfusion.loc[['No ICU', 'ICU']]
 
-        # Get the value of intraop_eph from the clinical dataset
-        intraop_eph = row["intraop_eph"]
-        if pd.notna(intraop_eph) and intraop_eph != 0:
-            value_eph = 1
+# Plot the normalized results
+plt.figure(figsize=(10, 6))
+normalized_transfusion.plot(kind='bar', ax=plt.gca(), color=['blue', 'red'], alpha=0.7)
 
-        # Get the value of intraop_phe from the clinical dataset
-        intraop_phe = row["intraop_phe"]
-        if pd.notna(intraop_phe) and intraop_phe != 0:
-            value_phe = 1
+# Add labels and title
+plt.xlabel('ICU Status')
+plt.ylabel('Average Blood Transfusion Units per Patient')
+plt.title('Average Blood Transfusion (RBC & FFP) per Patient for ICU and No ICU Groups')
+plt.xticks(rotation=0)
+plt.legend(title="Blood Product", labels=['RBC', 'FFP'])
 
-        # Variables to track if the last value is non-zero
-        non_zero_count_ino = 0
+# Display the plot
+plt.show()
 
-        # Iterate over the special variables and check if any have non-zero values for the current caseid
-        for var in special_variables:
-            track_row = df_tracklist[df_tracklist['tname'] == var]
-            if not track_row.empty:
-                trackidentifier = track_row.iloc[0]["tid"]
-                trackdata_url = f"https://api.vitaldb.net/{trackidentifier}"
+# -------- Save FFP and RBC data to CSV --------
+# Create new DataFrame with caseid, FFP and RBC
+df_transfusion = df_clinical[['caseid', 'intraop_ffp', 'intraop_rbc']].copy()
 
-                # Handle API error
-                try:
-                    response = requests.get(trackdata_url, timeout=10)
-                    response.raise_for_status()
-                except requests.exceptions.Timeout:
-                    print(f"Timeout error: Cannot get {var} ({trackdata_url})")
-                    continue  # Skip to next track
+# Rename columns to match requested format
+df_transfusion.rename(columns={'intraop_ffp': 'FFP', 'intraop_rbc': 'RBC'}, inplace=True)
 
-                try:
-                    # Convert API response into a pandas DataFrame
-                    trackdata = pd.read_csv(io.StringIO(response.text))
-                    if trackdata.empty:
-                        continue
-                except:
-                    continue  # Skip if there is an issue reading the track data
+# Replace missing values with 0
+df_transfusion.fillna(0, inplace=True)
 
-                # Get the last value of the track data
-                last_value = trackdata[var].iloc[-1] if var in trackdata.columns else 0
-
-                # Set value_vaso to 1 if the last value is non-zero
-                if last_value != 0:
-                    value_vaso = 1
-
-                # For value_ino, track only NEPI_VOL, EPI_VOL, and DOPA_VOL
-                if var in ["Orchestra/NEPI_VOL", "Orchestra/EPI_VOL", "Orchestra/DOPA_VOL"]:
-                    if last_value != 0:
-                        non_zero_count_ino += 1
-
-        # Set value_ino to 1 if exactly one of the three variables had a non-zero value
-        if non_zero_count_ino == 1:
-            value_ino = 1
-
-        # Append the results for the current caseid
-        results.append({
-            "caseid": caseid,
-            "value_eph": value_eph,
-            "value_phe": value_phe,
-            "value_vaso": value_vaso,
-            "value_ino": value_ino
-        })
-
-    # Save the results to a CSV file in the 'Data' folder
-    output_file = "C:/Users/mariah/Documents/GitHub/P10/Preprocessing/Data/Data_vasoactivedrugs.csv"
-    df_results = pd.DataFrame(results)
-    df_results.to_csv(output_file, index=False)
-    print(f"Data saved to {output_file}")
-
-# Run the function
-collect_track_last_value()
+# Save to CSV in the specified path
+output_path = 'C:/Users/mariah/Documents/GitHub/P10/Preprocessing/Data/Data_FFPandRBC.csv'
+df_transfusion.to_csv(output_path, index=False)
