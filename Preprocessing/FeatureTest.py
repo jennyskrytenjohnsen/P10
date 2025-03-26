@@ -7,12 +7,10 @@ import io
 clinical_data_url = "https://api.vitaldb.net/cases"
 df_clinical = pd.read_csv(clinical_data_url)
 
-# Extract 'intraop_eph' column and count missing values
+# Extract 'intraop_eph' and 'intraop_phe' columns and count missing values
 missing_eph = df_clinical["intraop_eph"].isna().sum()
-print(f"Missing values in 'intraop_eph': {missing_eph}")
-
-# Extract 'intraop_phe' column and count missing values
 missing_phe = df_clinical["intraop_phe"].isna().sum()
+print(f"Missing values in 'intraop_eph': {missing_eph}")
 print(f"Missing values in 'intraop_phe': {missing_phe}")
 
 # Load tracklist data from the VitalDB API
@@ -76,10 +74,17 @@ def collect_track_last_value():
         # If intraop_eph is found, transform it; otherwise, set to 0
         value_eph = 1 if (intraop_eph != 0 and pd.notna(intraop_eph)) else 0
 
-        # Append the caseid, value_eph, and value_vaso to the results list
+        # Get the value of intraop_phe from the clinical dataset by matching the caseid
+        intraop_phe = row.get("intraop_phe", pd.NA)
+
+        # If intraop_phe is found, transform it; otherwise, set to 0
+        value_phe = 1 if (intraop_phe != 0 and pd.notna(intraop_phe)) else 0
+
+        # Append the caseid, value_eph, value_phe, and value_vaso to the results list
         results.append({
             "caseid": caseid, 
             "value_eph": value_eph, 
+            "value_phe": value_phe,
             "value_vaso": value_vaso
         })
 
