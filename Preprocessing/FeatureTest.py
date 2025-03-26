@@ -42,6 +42,7 @@ def collect_track_last_value():
         value_vaso = 0  # Default to 0 for value_vaso
         value_eph = 0  # Default to 0 for value_eph
         value_phe = 0  # Default to 0 for value_phe
+        value_ino = 0  # Default to 0 for value_ino
 
         # Get the value of intraop_eph from the clinical dataset
         intraop_eph = row["intraop_eph"]
@@ -52,6 +53,9 @@ def collect_track_last_value():
         intraop_phe = row["intraop_phe"]
         if pd.notna(intraop_phe) and intraop_phe != 0:
             value_phe = 1
+
+        # Variables to track if the last value is non-zero
+        non_zero_count_ino = 0
 
         # Iterate over the special variables and check if any have non-zero values for the current caseid
         for var in special_variables:
@@ -82,14 +86,23 @@ def collect_track_last_value():
                 # Set value_vaso to 1 if the last value is non-zero
                 if last_value != 0:
                     value_vaso = 1
-                    break  # Once we find a non-zero value, we don't need to check further
+
+                # For value_ino, track only NEPI_VOL, EPI_VOL, and DOPA_VOL
+                if var in ["Orchestra/NEPI_VOL", "Orchestra/EPI_VOL", "Orchestra/DOPA_VOL"]:
+                    if last_value != 0:
+                        non_zero_count_ino += 1
+
+        # Set value_ino to 1 if exactly one of the three variables had a non-zero value
+        if non_zero_count_ino == 1:
+            value_ino = 1
 
         # Append the results for the current caseid
         results.append({
             "caseid": caseid,
             "value_eph": value_eph,
             "value_phe": value_phe,
-            "value_vaso": value_vaso
+            "value_vaso": value_vaso,
+            "value_ino": value_ino
         })
 
     # Save the results to a CSV file in the 'Data' folder
