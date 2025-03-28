@@ -15,11 +15,6 @@ df_lab = pd.read_csv(lab_data_url)
 # Filter lab data for rows where name is 'ph'
 df_ph = df_lab[df_lab["name"] == "ph"]
 
-# Convert the `dt`, `opend`, and `opstart` columns to datetime format
-df_ph['dt'] = pd.to_datetime(df_ph['dt'])
-df_clinical['opend'] = pd.to_datetime(df_clinical['opend'])
-df_clinical['opstart'] = pd.to_datetime(df_clinical['opstart'])
-
 # Initialize an empty list to store the final rows
 final_data = []
 
@@ -27,22 +22,36 @@ final_data = []
 for index, row in df_clinical.iterrows():
     caseid = row['caseid']
     preph = row['preph']
-    opstart_time = row['opstart']
-    opend_time = row['opend']
+    opstart_time = row['opstart']  # opstart is in seconds
+    opend_time = row['opend']  # opend is in seconds
     
     # Filter the lab data for the current caseid and check if dt is between opstart and opend
-    df_case_ph = df_ph[(df_ph['caseid'] == caseid) & (df_ph['dt'] >= opstart_time) & (df_ph['dt'] <= opend_time)]
+    df_case_ph = df_ph[(df_ph['caseid'] == caseid)]
     
-    # If there are any matching lab data for this caseid, select the closest to opend
-    if not df_case_ph.empty:
-        df_case_ph['time_diff'] = (df_case_ph['dt'] - opend_time).abs()  # Calculate the time difference to opend
-        closest_ph_row = df_case_ph.loc[df_case_ph['time_diff'].idxmin()]  # Get the row with the closest time
-        periph = closest_ph_row['result']
-    else:
-        periph = None  # If no matching lab data, set periph to None
+    # Extract preph and periph values (pH before and after surgery)
+    preph_val = preph
+    periph = None
+    closest_periph = None
     
-    # Append the row with caseid, preph, and periph to the final_data list
-    final_data.append({'caseid': caseid, 'preph': preph, 'periph': periph})
+    # Loop through ph data to find preph and periph
+    for _, ph_row in df_case_ph.iterrows():
+        ph_dt = ph_row['dt']  # dt is in seconds
+        ph_value = ph_row['result']
+        
+        # If ph time is before opstart, record as preph
+        if ph_dt < opstart_time:
+            preph_val = ph_value
+        
+        # If ph time is after opstart and before opend, record as periph
+        elif opstart_time <= ph_dt < opend_time:
+            if closest_periph is None or abs(ph_dt - opend_time) < abs(closest_periph['dt'] - opend_time):
+                closest_periph = ph_row  # Update closest periph
+    
+    # Append preph and closest periph to the final data
+    final_row = {'caseid': caseid, 'preph': preph_val}
+    if closest_periph is not None:
+        final_row['periph'] = closest_periph['result']
+    final_data.append(final_row)
 
 # Convert the final list into a DataFrame
 df_final = pd.DataFrame(final_data)

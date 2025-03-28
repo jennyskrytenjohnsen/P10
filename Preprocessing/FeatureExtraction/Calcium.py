@@ -15,20 +15,15 @@ df_lab = pd.read_csv(lab_data_url)
 # Filter lab data for rows where name is 'ica' (ionized calcium)
 df_ca = df_lab[df_lab["name"] == "ica"]
 
-# Convert the `dt`, `opend`, and `opstart` columns to datetime format
-df_ca['dt'] = pd.to_datetime(df_ca['dt'])
-df_clinical['opend'] = pd.to_datetime(df_clinical['opend'])
-df_clinical['opstart'] = pd.to_datetime(df_clinical['opstart'])
-
-# Initialize an empty list to store the final rows
+# Prepare list to collect the final rows
 final_data = []
 
 # Loop through each row in the clinical dataset to extract the relevant info
 for index, row in df_clinical.iterrows():
     caseid = row['caseid']
     preca = row['preca']
-    opstart_time = row['opstart']
-    opend_time = row['opend']
+    opstart_time = row['opstart']  # opstart is in seconds
+    opend_time = row['opend']  # opend is in seconds
     
     # Filter the lab data for the current caseid and check if dt is between opstart and opend
     df_case_ca = df_ca[(df_ca['caseid'] == caseid) & (df_ca['dt'] >= opstart_time) & (df_ca['dt'] <= opend_time)]

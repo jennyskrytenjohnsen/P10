@@ -12,31 +12,26 @@ df_lab = pd.read_csv(lab_data_url)
 # Filter lab data for rows where name is 'hco3'
 df_hco3 = df_lab[df_lab["name"] == "hco3"]
 
-# Convert the `dt`, `opend`, and `opstart` columns to datetime format
-df_hco3['dt'] = pd.to_datetime(df_hco3['dt'])
-df_clinical['opend'] = pd.to_datetime(df_clinical['opend'])
-df_clinical['opstart'] = pd.to_datetime(df_clinical['opstart'])
-
 # Initialize an empty list to store the final rows
 final_data = []
 
 # Loop through each row in the clinical dataset to extract the relevant info
 for index, row in df_clinical.iterrows():
     caseid = row['caseid']
-    opstart_time = row['opstart']
-    opend_time = row['opend']
+    opstart_time = row['opstart']  # opstart is in seconds
+    opend_time = row['opend']  # opend is in seconds
     
-    # Filter the lab data for the current caseid and check if the time is before opstart or between opstart and opend
+    # Filter the lab data for the current caseid and check if dt is between opstart and opend
     df_case_hco3 = df_hco3[(df_hco3['caseid'] == caseid)]
     
-    # Extract prehco3 and perihco3 values (C-reactive protein before and after surgery)
+    # Extract prehco3 and perihco3 values (HCO3 before and after surgery)
     prehco3 = None
     perihco3 = None
     closest_perihco3 = None
     
     # Loop through hco3 data to find prehco3 and perihco3
     for _, hco3_row in df_case_hco3.iterrows():
-        hco3_dt = hco3_row['dt']
+        hco3_dt = hco3_row['dt']  # dt is in seconds
         hco3_value = hco3_row['result']
         
         # If hco3 time is before opstart, record as prehco3
