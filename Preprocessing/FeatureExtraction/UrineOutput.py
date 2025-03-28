@@ -1,0 +1,45 @@
+import vitaldb  
+import requests
+import pandas as pd
+import io
+import matplotlib.pyplot as plt
+import os
+
+# Load clinical dataset from the VitalDB API
+clinical_data_url = "https://api.vitaldb.net/cases"
+df_clinical = pd.read_csv(clinical_data_url)
+
+# opstart and opend are already in seconds, so calculate duration in hours
+df_clinical['duration_hours'] = (df_clinical['opend'] - df_clinical['opstart']) / 3600  # Convert seconds to hours
+
+# Prepare the new DataFrame
+data_urineoutput = pd.DataFrame()
+data_urineoutput['caseid'] = df_clinical['caseid']
+data_urineoutput['uoraw'] = df_clinical['intraop_uo'].fillna(0)
+
+# Avoid division by zero or missing durations
+safe_duration = df_clinical['duration_hours'].replace(0, pd.NA)
+uotime_values = data_urineoutput['uoraw'] / safe_duration
+
+# Round to 0 decimals and fill NaN with 0 for uotime
+data_urineoutput['uotime'] = uotime_values.fillna(0).round(0).astype(int)
+
+# Calculate 'oukgtime' = urineoutput / (weight * duration_hours)
+# Replace NaN values in weight with 0 to avoid division errors
+safe_weight = df_clinical['weight'].fillna(0)
+
+# Calculate oukgtime, avoid division by zero
+data_urineoutput['oukgtime'] = (data_urineoutput['uoraw'] / (safe_weight * safe_duration)).fillna(0)
+
+# Round 'oukgtime' to 2 decimal places
+data_urineoutput['oukgtime'] = data_urineoutput['oukgtime'].round(2)
+
+# Ensure output directory exists
+output_dir = os.path.join('Preprocessing', 'Data')
+os.makedirs(output_dir, exist_ok=True)
+
+# Save to CSV
+output_path = os.path.join(output_dir, 'Data_urineoutput.csv')
+data_urineoutput.to_csv(output_path, index=False)
+
+print(f"CSV file saved to {output_path}")
