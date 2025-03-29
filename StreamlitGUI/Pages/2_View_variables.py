@@ -31,11 +31,13 @@ values_df = pd.DataFrame(np.array(values).reshape(2, 5), index=rows, columns=col
 
 # Function to apply color based on value
 def colorize(val):
-    # Get location of the value
-    row, col = data.index[data.eq(val).any(1)][0], data.columns[data.loc[data.eq(val).any(1)].iloc[0] == val][0]
-    score = values_df.loc[row, col] / 100
-    color = sns.color_palette("coolwarm", as_cmap=True)(score)
-    return f'background-color: rgba({int(color[0]*255)}, {int(color[1]*255)}, {int(color[2]*255)}, 0.7)'
+    for row in data.index:
+        for col in data.columns:
+            if data.loc[row, col] == val:
+                score = values_df.loc[row, col] / 100
+                color = sns.color_palette("coolwarm", as_cmap=True)(score)
+                return f'background-color: rgba({int(color[0]*255)}, {int(color[1]*255)}, {int(color[2]*255)}, 0.7)'
+    return ''
 
 # Style the table
 styled_table = data.style.applymap(colorize)
