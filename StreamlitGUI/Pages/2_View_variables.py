@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Variables", page_icon="📊")
 
@@ -42,3 +43,12 @@ def colorize(val):
 # Style the table
 styled_table = data.style.applymap(colorize)
 st.write(styled_table)
+
+# Add a color bar legend
+st.markdown("Importance Scale")
+fig, ax = plt.subplots(figsize=(8, 0.1))
+cmap = sns.color_palette("coolwarm", as_cmap=True)
+norm = plt.Normalize(0, 100)
+cb1 = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation='horizontal')
+# cb1.set_label('Importance Score')
+st.pyplot(fig)
