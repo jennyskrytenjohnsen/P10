@@ -6,10 +6,10 @@ clinical_data_url = "https://api.vitaldb.net/cases"
 df_clinical = pd.read_csv(clinical_data_url)
 
 # Extract preop_pao2 directly from the clinical dataset
-df_clinical['preop_pao2_extracted'] = df_clinical['preop_pao2']  # optionally rename if needed
+df_clinical['preop_pao2'] = df_clinical['preop_pao2']  # optionally rename if needed
 
 # Keep only relevant columns
-df_final = df_clinical[['caseid', 'preop_pao2_extracted']]
+df_final = df_clinical[['caseid', 'preop_pao2']]
 
 # Save to CSV
 save_path = os.path.join('Preprocessing', 'Data', 'Data_pao2.csv')
