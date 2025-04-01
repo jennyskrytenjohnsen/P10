@@ -12,31 +12,26 @@ df_lab = pd.read_csv(lab_data_url)
 # Filter lab data for rows where name is 'tprot'
 df_tprot = df_lab[df_lab["name"] == "tprot"]
 
-# Convert the `dt`, `opend`, and `opstart` columns to datetime format
-df_tprot['dt'] = pd.to_datetime(df_tprot['dt'])
-df_clinical['opend'] = pd.to_datetime(df_clinical['opend'])
-df_clinical['opstart'] = pd.to_datetime(df_clinical['opstart'])
-
 # Initialize an empty list to store the final rows
 final_data = []
 
 # Loop through each row in the clinical dataset to extract the relevant info
 for index, row in df_clinical.iterrows():
     caseid = row['caseid']
-    opstart_time = row['opstart']
-    opend_time = row['opend']
+    opstart_time = row['opstart']  # opstart is in seconds
+    opend_time = row['opend']  # opend is in seconds
     
-    # Filter the lab data for the current caseid and check if the time is before opstart or between opstart and opend
+    # Filter the lab data for the current caseid and check if dt is between opstart and opend
     df_case_tprot = df_tprot[(df_tprot['caseid'] == caseid)]
     
-    # Extract pretprot and peritprot values (C-reactive protein before and after surgery)
+    # Extract pretprot and peritprot values (Total Protein before and after surgery)
     pretprot = None
     peritprot = None
     closest_peritprot = None
     
     # Loop through tprot data to find pretprot and peritprot
     for _, tprot_row in df_case_tprot.iterrows():
-        tprot_dt = tprot_row['dt']
+        tprot_dt = tprot_row['dt']  # dt is in seconds
         tprot_value = tprot_row['result']
         
         # If tprot time is before opstart, record as pretprot

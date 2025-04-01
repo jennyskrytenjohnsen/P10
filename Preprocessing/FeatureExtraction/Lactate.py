@@ -12,31 +12,26 @@ df_lab = pd.read_csv(lab_data_url)
 # Filter lab data for rows where name is 'lac'
 df_lac = df_lab[df_lab["name"] == "lac"]
 
-# Convert the `dt`, `opend`, and `opstart` columns to datetime format
-df_lac['dt'] = pd.to_datetime(df_lac['dt'])
-df_clinical['opend'] = pd.to_datetime(df_clinical['opend'])
-df_clinical['opstart'] = pd.to_datetime(df_clinical['opstart'])
-
 # Initialize an empty list to store the final rows
 final_data = []
 
 # Loop through each row in the clinical dataset to extract the relevant info
 for index, row in df_clinical.iterrows():
     caseid = row['caseid']
-    opstart_time = row['opstart']
-    opend_time = row['opend']
+    opstart_time = row['opstart']  # opstart is in seconds
+    opend_time = row['opend']  # opend is in seconds
     
-    # Filter the lab data for the current caseid and check if the time is before opstart or between opstart and opend
+    # Filter the lab data for the current caseid and check if dt is between opstart and opend
     df_case_lac = df_lac[(df_lac['caseid'] == caseid)]
     
-    # Extract prelac and perilac values (C-reactive protein before and after surgery)
+    # Extract prelac and perilac values (Lactate before and after surgery)
     prelac = None
     perilac = None
     closest_perilac = None
     
     # Loop through lac data to find prelac and perilac
     for _, lac_row in df_case_lac.iterrows():
-        lac_dt = lac_row['dt']
+        lac_dt = lac_row['dt']  # dt is in seconds
         lac_value = lac_row['result']
         
         # If lac time is before opstart, record as prelac

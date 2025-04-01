@@ -15,11 +15,6 @@ df_lab = pd.read_csv(lab_data_url)
 # Filter lab data for rows where name is 'plt' (platelets)
 df_plt = df_lab[df_lab["name"] == "plt"]
 
-# Convert the `dt`, `opend`, and `opstart` columns to datetime format
-df_plt['dt'] = pd.to_datetime(df_plt['dt'])
-df_clinical['opend'] = pd.to_datetime(df_clinical['opend'])
-df_clinical['opstart'] = pd.to_datetime(df_clinical['opstart'])
-
 # Initialize an empty list to store the final rows
 final_data = []
 
@@ -27,8 +22,8 @@ final_data = []
 for index, row in df_clinical.iterrows():
     caseid = row['caseid']
     preplt = row['preplt']
-    opstart_time = row['opstart']
-    opend_time = row['opend']
+    opstart_time = row['opstart']  # opstart is in seconds
+    opend_time = row['opend']  # opend is in seconds
     
     # Filter the lab data for the current caseid and check if dt is between opstart and opend
     df_case_plt = df_plt[(df_plt['caseid'] == caseid) & (df_plt['dt'] >= opstart_time) & (df_plt['dt'] <= opend_time)]

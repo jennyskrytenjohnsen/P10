@@ -12,19 +12,14 @@ df_lab = pd.read_csv(lab_data_url)
 # Filter lab data for WBC (White Blood Cell count)
 df_wbc = df_lab[df_lab["name"] == "wbc"]
 
-# Convert datetime columns to datetime format
-df_wbc['dt'] = pd.to_datetime(df_wbc['dt'])
-df_clinical['opstart'] = pd.to_datetime(df_clinical['opstart'])
-df_clinical['opend'] = pd.to_datetime(df_clinical['opend'])
-
 # Prepare list to collect final rows
 final_data = []
 
 # Loop through clinical cases
 for index, row in df_clinical.iterrows():
     caseid = row['caseid']
-    opstart_time = row['opstart']
-    opend_time = row['opend']
+    opstart_time = row['opstart']  # opstart is in seconds
+    opend_time = row['opend']  # opend is in seconds
     
     # Filter WBC results for this case
     df_case_wbc = df_wbc[df_wbc['caseid'] == caseid]
@@ -39,7 +34,7 @@ for index, row in df_clinical.iterrows():
     # --- Perioperative WBC: closest during surgery to opend ---
     df_peri = df_case_wbc[(df_case_wbc['dt'] >= opstart_time) & (df_case_wbc['dt'] <= opend_time)]
     if not df_peri.empty:
-        df_peri['time_diff'] = (df_peri['dt'] - opend_time).abs()
+        df_peri['time_diff'] = (df_peri['dt'] - opend_time).abs()  # Calculate time difference to opend
         periwbc = df_peri.loc[df_peri['time_diff'].idxmin()]['result']
     else:
         periwbc = None
