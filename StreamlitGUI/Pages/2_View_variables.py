@@ -22,13 +22,13 @@ rows = ["Preoperative", "", "Perioperative"]
 #     "Others": [("Comorbidities", 70), ("x", 50), ("Surgical type", 85)]
 # }
 
-data_dict = {
-    "Respiratory": [("PaO2", 85), ("x", 50), ("FiO2", 75)],
-    "Circulatory": [("MAP", 70), ("x", 50), ("HR", 65)],
-    "Renal": [("Creatinine", 80), ("x", 50), ("BUN", 60)],
-    "Demographic": [("Age", 50), ("x", 50), ("Sex", 30)],
-    "Others": [("Comorbidities", 70), ("x", 50), ("Surgical type", 85)]
-}
+# data_dict = {
+#     "Respiratory": [("PaO2", 85), ("x", 50), ("FiO2", 75)],
+#     "Circulatory": [("MAP", 70), ("x", 50), ("HR", 65)],
+#     "Renal": [("Creatinine", 80), ("x", 50), ("BUN", 60)],
+#     "Demographic": [("Age", 50), ("x", 50), ("Sex", 30)],
+#     "Others": [("Comorbidities", 70), ("x", 50), ("Surgical type", 85)]
+# }
 
 data_dict_numbers = {
     "Respiratory": [(85), (50), (75)],
