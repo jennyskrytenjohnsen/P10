@@ -15,30 +15,22 @@ df_k = df_lab[df_lab["name"] == "k"]
 # Prepare list to collect final rows
 final_data = []
 
-# Loop through each row in the clinical dataset
 for index, row in df_clinical.iterrows():
     caseid = row['caseid']
-    opstart_time = row['opstart']
-    opend_time = row['opend']
+    opstart = row['opstart']
     
-    # Filter potassium values during surgery
-    df_case_k = df_k[(df_k['caseid'] == caseid) & (df_k['dt'] >= opstart_time) & (df_k['dt'] <= opend_time)]
+    df_case_k = df_k[(df_k['caseid'] == caseid) & (df_k['dt'] < opstart)]
     
     if not df_case_k.empty:
-        df_case_k['time_diff'] = (df_case_k['dt'] - opend_time).abs()
-        closest_k_row = df_case_k.loc[df_case_k['time_diff'].idxmin()]
-        perik = closest_k_row['result']
+        closest_row = df_case_k.loc[df_case_k['dt'].idxmax()]
+        preop_k = closest_row['result']
     else:
-        perik = None
+        preop_k = None
+    
+    final_data.append({'caseid': caseid, 'preop_k': preop_k})
 
-    # Append result
-    final_data.append({'caseid': caseid, 'perik': perik})
-
-# Convert to DataFrame
 df_final = pd.DataFrame(final_data)
-
-# Define save path
-save_path = os.path.join('Preprocessing', 'Data', 'Data_potassium.csv')
+save_path = os.path.join('Preprocessing', 'Data', 'Data_preopPotassium.csv')
 os.makedirs(os.path.dirname(save_path), exist_ok=True)
 df_final.to_csv(save_path, index=False)
 
