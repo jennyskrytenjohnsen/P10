@@ -2,7 +2,7 @@ import pandas as pd
 
 test_fil = 'C:/Users/johns/Documents/10semester/Kode/VitalDB_Tracks.csv'
 track_list_url = "https://api.vitaldb.net/trks"
-df_tracklist = pd.read_csv(test_fil) 
+df_tracklist = pd.read_csv(track_list_url) 
 
 save_number_of_count = []
 total_patients = df_tracklist['caseid'].nunique() 
@@ -25,7 +25,7 @@ def count_tracks():
 
     for index, row in new_dataframe.iterrows():
         if row['tname'] in special_variables:
-            precentage_recorded_of_total_patients = row['how_many_times_is_patient_precent']/total_patients 
+            precentage_recorded_of_total_patients = (row['how_many_times_is_patient_precent']/total_patients)*100 
             save_number_of_count.append((row['tname'],row['how_many_times_is_patient_precent'],precentage_recorded_of_total_patients))
 
     if save_number_of_count:
