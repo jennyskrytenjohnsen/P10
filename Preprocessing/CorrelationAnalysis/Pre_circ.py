@@ -47,7 +47,7 @@ correlation_matrix = df_merged[['preop_htn', 'aptt_avg', 'ptsec_avg']].corr(meth
 # Plot the correlation matrix
 plt.figure(figsize=(6, 4))
 sns.heatmap(correlation_matrix, cmap="coolwarm", fmt=".2f", linewidths=0.5)
-plt.title("Spearman's Correlation Matrix")
+plt.title("Correlation Matrix - Pre Circulatory Values")
 plt.show()
 
 print(correlation_matrix)

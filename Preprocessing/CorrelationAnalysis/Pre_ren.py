@@ -46,10 +46,13 @@ df_clinical_merged = df_preop_cr.merge(df_preop_alb, on='caseid')\
 # Compute the correlation matrix using Spearman's correlation
 correlation_matrix = df_clinical_merged[['preop_cr', 'preop_alb', 'preop_k', 'preop_na', 'preop_bun', 'gfr_avg']].corr(method='spearman')
 
-# Plot the correlation matrix
+# Plot the correlation matrix without numbers
 plt.figure(figsize=(6, 4))
-sns.heatmap(correlation_matrix, cmap="coolwarm", fmt=".2f", linewidths=0.5)
-plt.title("Spearman's Correlation Matrix")
+sns.heatmap(correlation_matrix, cmap="coolwarm", linewidths=0.5, cbar=True)
+
+# Rotate x-axis labels to horizontal
+plt.xticks(rotation=0)
+plt.title("Correlation Matrix - Pre Renal Variables")
 plt.show()
 
 print(correlation_matrix)
