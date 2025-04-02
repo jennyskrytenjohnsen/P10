@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 data = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_MC.csv")
 
 # Filter data where 'tname' is 'Primus/FIO2'
-data = data[data["tname"] == "Primus/FIO2"]
+data = data[data["tname"] == "Primus/PEEP_MBAR"]
 
 # Print rows where 'precentage_of_signal_is_there' is greater than 100
 outliers = data[data["precentage_of_signal_is_there"] > 100]

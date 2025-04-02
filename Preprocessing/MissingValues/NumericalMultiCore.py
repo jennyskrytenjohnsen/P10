@@ -41,7 +41,7 @@ def worker(subset):
 
             #Tries to find minimal samplingfrequency: Takes the 20 first sampels form the Time array, differatiates it 
             # and find the minimal value
-            min_gap = trackdata.iloc[:20]['Time'].diff().min()
+            min_gap = trackdata.iloc[:150]['Time'].diff().min()
             # print('Min Gap:', min_gap) #Prints for testing reasons
 
             last_value_of_array = trackdata['Time'].iloc[-1] #Get the last value of the array, 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     if result:
         df_saved_tracks = pd.DataFrame(result, columns=["caseid", "tname", "tid", "how_many_samples_should_there_be","total_samples_of_singal", "min_gap", "samples_missing", "precentage_of_signal_is_there"])
         df_saved_tracks.to_csv("saved_tracks_numerical_MC.csv", index=False)
-        print("CSV file 'saved_tracks_numerical_MC.csv' has been saved.")
+        print("CSV file 'saved_tracks_numerical_MC_below100trial.csv' has been saved.")
     else:
         print("No tracks met the criteria for saving.:()")
     print(result)
