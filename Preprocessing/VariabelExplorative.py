@@ -14,7 +14,7 @@ print(df_clinical.info())  # Shows column names, data types, and missing values
 
 # Select two variables for visualization
 var1 = "age"  # Example variable: patient age
-var2 = "height"  # Example variable: patient height
+var2 = "preop_pao2"  # Example variable: patient height
 icu_var = "icu_days"  # ICU stay duration variable
 
 # Drop rows with missing values for selected variables
@@ -45,11 +45,11 @@ plt.show()
 
 # --- Histogram of var1 ---
 plt.figure(figsize=(8, 5))
-plt.hist(df_no_icu[var1], bins=40, color='red', alpha=0.7, label='No ICU')
-plt.hist(df_icu[var1], bins=40, color='blue', alpha=0.7, label='ICU')
-plt.xlabel(var1)
+plt.hist(df_no_icu[var2], bins=40, color='red', alpha=0.7, label='No ICU')
+plt.hist(df_icu[var2], bins=40, color='blue', alpha=0.7, label='ICU')
+plt.xlabel(var2)
 plt.ylabel("Frequency")
-plt.title(f"Histogram of {var1}")
+plt.title(f"Histogram of {var2}")
 plt.grid(True)
 
 # Add legend
