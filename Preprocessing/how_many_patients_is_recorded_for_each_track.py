@@ -37,4 +37,5 @@ def count_tracks():
         print("No tracks met the criteria for saving.:(")   
 
 count_tracks()
+print('Hej')
 
