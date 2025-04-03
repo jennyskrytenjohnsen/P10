@@ -15,36 +15,40 @@ df_bili = df_lab[df_lab["name"] == "tbil"]
 # Prepare list to collect final rows
 final_data = []
 
-# Loop through each row in the clinical dataset to extract the relevant info
+# Loop through each row in the clinical dataset
 for index, row in df_clinical.iterrows():
     caseid = row['caseid']
-    opstart_time = row['opstart']  # opstart is in seconds
-    opend_time = row['opend']  # opend is in seconds
-    
-    # Filter the lab data for the current caseid and check if dt is between opstart and opend
-    df_case_bili = df_bili[(df_bili['caseid'] == caseid) & (df_bili['dt'] >= opstart_time) & (df_bili['dt'] <= opend_time)]
-    
-    # If there are any matching lab data for this caseid, select the closest to opend
-    if not df_case_bili.empty:
-        df_case_bili['time_diff'] = (df_case_bili['dt'] - opend_time).abs()  # Calculate time difference to opend
-        closest_bili_row = df_case_bili.loc[df_case_bili['time_diff'].idxmin()]  # Get the row with the closest time
-        peribil = closest_bili_row['result']
-    else:
-        peribil = None  # If no matching lab data, set peribil to None
-    
-    # Append the row with caseid and peribil to the final_data list
-    final_data.append({'caseid': caseid, 'peribil': peribil})
+    opstart_time = row['opstart']  # seconds
+    opend_time = row['opend']      # seconds
 
-# Convert the final list into a DataFrame
+    # Filter bilirubin lab data for the current caseid
+    df_case_bili = df_bili[df_bili['caseid'] == caseid]
+
+    # --- Preoperative bilirubin: latest before opstart ---
+    df_pre = df_case_bili[df_case_bili['dt'] < opstart_time]
+    if not df_pre.empty:
+        prebil = df_pre.loc[df_pre['dt'].idxmax(), 'result']
+    else:
+        prebil = None
+
+    # --- Perioperative bilirubin: closest during surgery to opend ---
+    df_peri = df_case_bili[(df_case_bili['dt'] >= opstart_time) & (df_case_bili['dt'] <= opend_time)]
+    if not df_peri.empty:
+        df_peri = df_peri.copy()
+        df_peri['time_diff'] = (df_peri['dt'] - opend_time).abs()
+        peribil = df_peri.loc[df_peri['time_diff'].idxmin(), 'result']
+    else:
+        peribil = None
+
+    # Save result for this case
+    final_data.append({'caseid': caseid, 'prebil': prebil, 'peribil': peribil})
+
+# Convert results to DataFrame
 df_final = pd.DataFrame(final_data)
 
-# Define the file path to save the CSV file in the 'Preprocessing/Data' directory
+# Save to CSV
 save_path = os.path.join('Preprocessing', 'Data', 'Data_bilirubin.csv')
-
-# Ensure the directory exists
 os.makedirs(os.path.dirname(save_path), exist_ok=True)
-
-# Save the DataFrame to the specified path
 df_final.to_csv(save_path, index=False)
 
-print(f"CSV file 'Data_bilirubin.csv' has been saved successfully at {save_path}.")
+print(f"CSV file 'Data_bilirubin.csv' with prebil and peribil has been saved at {save_path}.")
