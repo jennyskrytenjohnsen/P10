@@ -11,6 +11,10 @@ HR_track = {'Solar8000/HR'}
 track_list_url = "https://api.vitaldb.net/trks"
 df_tracklist = pd.read_csv(track_list_url)
 
+# Load clinical data
+clinical_data_url = "https://api.vitaldb.net/cases"
+df_clinical = pd.read_csv(clinical_data_url)
+
 # Prepare a list to store results
 results = []
 
@@ -27,12 +31,25 @@ for index, row in df_tracklist.iterrows():
         
         if response.status_code == 200:
             trackdata = pd.read_csv(io.StringIO(response.text))
-            if 'Solar8000/HR' in trackdata.columns:
-                mean_val = trackdata['Solar8000/HR'].mean()
-                print(f'Average HR for CaseID {caseid}: {mean_val}')
-                results.append({'caseid': caseid, 'AvgHR': mean_val})
+            
+            # Get opstart and opend times for the case
+            case_info = df_clinical[df_clinical['caseid'] == caseid]
+            if not case_info.empty:
+                opstart = case_info.iloc[0]['opstart']
+                opend = case_info.iloc[0]['opend']
+                
+                # Filter data to only include values between opstart and opend
+                trackdata_filtered = trackdata[(trackdata['Time'] >= opstart) & (trackdata['Time'] <= opend)]
+                
+                if 'Solar8000/HR' in trackdata_filtered.columns and not trackdata_filtered.empty:
+                    mean_val = trackdata_filtered['Solar8000/HR'].mean()
+                else:
+                    mean_val = "No Data"
             else:
-                print(f'Column "Solar8000/HR" not found in CaseID {caseid}')
+                mean_val = "No Data"
+                
+            print(f'Average HR for CaseID {caseid}: {mean_val}')
+            results.append({'caseid': caseid, 'AvgHR': mean_val})
         else:
             print(f'Failed to retrieve data for CaseID {caseid}')
 

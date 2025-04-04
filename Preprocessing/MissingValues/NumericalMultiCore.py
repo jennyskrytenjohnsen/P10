@@ -26,7 +26,8 @@ def worker(subset):
     'Solar8000/ART_MBP', 'Solar8000/NIBP_MBP', 'Solar8000/HR', 'CardioQ/HR', 'Vigilance/HR_AVG',
     'Vigileo/CO', 'EV1000/CO', 'Vigilance/CO', 'CardioQ/CO', 'Solar8000/PLETH_SPO2', 'Vigilance/SVO2',
     'Solar8000/FIO2', 'Primus/FIO2', 'Solar8000/RR', 'Primus/PEEP_MBAR', 'Solar8000/VENT_TV', 'Primus/TV',
-    'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR'
+    'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR', 'Solar8000/FEM_MBP', 'Solar8000/RR_CO2', 
+    'Primus/COMPLIANCE' 
     }
     for index, row in subset.iterrows(): # For loop which runs over every row in the df_trackist
         if row['tname'] in special_variables: #Evaluates if the name in the row a special variable
@@ -41,7 +42,7 @@ def worker(subset):
 
             #Tries to find minimal samplingfrequency: Takes the 20 first sampels form the Time array, differatiates it 
             # and find the minimal value
-            min_gap = trackdata.iloc[:150]['Time'].diff().min()
+            min_gap = trackdata.iloc[:500]['Time'].diff().min()
             # print('Min Gap:', min_gap) #Prints for testing reasons
 
             last_value_of_array = trackdata['Time'].iloc[-1] #Get the last value of the array, 
@@ -91,7 +92,7 @@ if __name__ == "__main__":
     result = parallel_for_loop(df_tracklist)
     if result:
         df_saved_tracks = pd.DataFrame(result, columns=["caseid", "tname", "tid", "how_many_samples_should_there_be","total_samples_of_singal", "min_gap", "samples_missing", "precentage_of_signal_is_there"])
-        df_saved_tracks.to_csv("saved_tracks_numerical_MC.csv", index=False)
+        df_saved_tracks.to_csv("saved_tracks_numerical_MC_below100trialtest2.csv", index=False)
         print("CSV file 'saved_tracks_numerical_MC_below100trial.csv' has been saved.")
     else:
         print("No tracks met the criteria for saving.:()")
