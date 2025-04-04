@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 # Track identifier for heart rate
-HR_track = {'Solar8000/HR'}
+Compl_track = {'Primus/COMPLIANCE'}
 
 # Load track list
 track_list_url = "https://api.vitaldb.net/trks"
@@ -18,15 +18,15 @@ df_clinical = pd.read_csv(clinical_data_url)
 # Load the CSV file containing signal percentage information
 data_signal = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_MC_below100trialtest2.csv")
 
-# Filter for only Solar8000/HR track data
-data_signal = data_signal[data_signal["tname"] == "Solar8000/HR"]
+# Filter for only Primus/COMPLIANCE track data
+data_signal = data_signal[data_signal["tname"] == "Primus/COMPLIANCE"]
 
 # Prepare a list to store results
 results = []
 
 # Iterate over each row in the DataFrame
 for index, row in df_tracklist.iterrows():
-    if row['tname'] in HR_track:  # Check if track name is in our target list
+    if row['tname'] in Compl_track:  # Check if track name is in our target list
         trackid = row['tid']  # Track ID
         caseid = row['caseid']  # Case ID
         print(f'Processing CaseID: {caseid}, TrackName: {row["tname"]}')
@@ -47,8 +47,8 @@ for index, row in df_tracklist.iterrows():
                 # Filter data to only include values between opstart and opend
                 trackdata_filtered = trackdata[(trackdata['Time'] >= opstart) & (trackdata['Time'] <= opend)]
                 
-                if 'Solar8000/HR' in trackdata_filtered.columns and not trackdata_filtered.empty:
-                    mean_val = trackdata_filtered['Solar8000/HR'].mean()
+                if 'Primus/COMPLIANCE' in trackdata_filtered.columns and not trackdata_filtered.empty:
+                    mean_val = trackdata_filtered['Primus/COMPLIANCE'].mean()
                 else:
                     mean_val = "No Data"
             else:
@@ -57,17 +57,17 @@ for index, row in df_tracklist.iterrows():
             # Check if the signal percentage for the caseid is more than 75
             signal_info = data_signal[data_signal['caseid'] == caseid]
             if not signal_info.empty and signal_info.iloc[0]['precentage_of_signal_is_there'] > 75:
-                print(f'Average HR for CaseID {caseid}: {mean_val}')
-                results.append({'caseid': caseid, 'AvgHR': mean_val})
+                print(f'Average Compl for CaseID {caseid}: {mean_val}')
+                results.append({'caseid': caseid, 'AvgCompl': mean_val})
             else:
                 print(f'Skipping CaseID {caseid} due to signal percentage <= 75')
         else:
             print(f'Failed to retrieve data for CaseID {caseid}')
 
 # Create DataFrame and save to CSV
-output_dir = "Preprocessing/FeatureExtraction"
+output_dir = "Preprocessing/Data"
 os.makedirs(output_dir, exist_ok=True)
-output_path = os.path.join(output_dir, "Data_AvgHR.csv")
+output_path = os.path.join(output_dir, "Data_AvgCompl.csv")
 df_results = pd.DataFrame(results)
 df_results.to_csv(output_path, index=False)
 

@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 # Track identifier for heart rate
-HR_track = {'Solar8000/HR'}
+RR_track = {'Solar8000/RR_CO2'}
 
 # Load track list
 track_list_url = "https://api.vitaldb.net/trks"
@@ -18,15 +18,12 @@ df_clinical = pd.read_csv(clinical_data_url)
 # Load the CSV file containing signal percentage information
 data_signal = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_MC_below100trialtest2.csv")
 
-# Filter for only Solar8000/HR track data
-data_signal = data_signal[data_signal["tname"] == "Solar8000/HR"]
-
 # Prepare a list to store results
 results = []
 
 # Iterate over each row in the DataFrame
 for index, row in df_tracklist.iterrows():
-    if row['tname'] in HR_track:  # Check if track name is in our target list
+    if row['tname'] in RR_track:  # Check if track name is in our target list
         trackid = row['tid']  # Track ID
         caseid = row['caseid']  # Case ID
         print(f'Processing CaseID: {caseid}, TrackName: {row["tname"]}')
@@ -41,33 +38,36 @@ for index, row in df_tracklist.iterrows():
             # Get opstart and opend times for the case
             case_info = df_clinical[df_clinical['caseid'] == caseid]
             if not case_info.empty:
-                opstart = case_info.iloc[0]['opstart']
                 opend = case_info.iloc[0]['opend']
                 
-                # Filter data to only include values between opstart and opend
-                trackdata_filtered = trackdata[(trackdata['Time'] >= opstart) & (trackdata['Time'] <= opend)]
+                # Define time range for 15 minutes before opend
+                last_15_min = (trackdata['Time'] >= opend - 900) & (trackdata['Time'] <= opend)
                 
-                if 'Solar8000/HR' in trackdata_filtered.columns and not trackdata_filtered.empty:
-                    mean_val = trackdata_filtered['Solar8000/HR'].mean()
+                # Filter data for the last 15 minutes
+                trackdata_last = trackdata[last_15_min]
+                
+                # Calculate mean RR
+                if 'Solar8000/RR_CO2' in trackdata.columns:
+                    mean_rr_last_15min = trackdata_last['Solar8000/RR_CO2'].mean() if not trackdata_last.empty else np.nan
                 else:
-                    mean_val = "No Data"
+                    mean_rr_last_15min = np.nan
             else:
-                mean_val = "No Data"
+                mean_rr_last_15min = np.nan
             
             # Check if the signal percentage for the caseid is more than 75
             signal_info = data_signal[data_signal['caseid'] == caseid]
             if not signal_info.empty and signal_info.iloc[0]['precentage_of_signal_is_there'] > 75:
-                print(f'Average HR for CaseID {caseid}: {mean_val}')
-                results.append({'caseid': caseid, 'AvgHR': mean_val})
+                print(f'Average RR for last 15 min before opend for CaseID {caseid}: {mean_rr_last_15min}')
+                results.append({'caseid': caseid, 'Avg_RR_Last_15min': mean_rr_last_15min})
             else:
                 print(f'Skipping CaseID {caseid} due to signal percentage <= 75')
         else:
             print(f'Failed to retrieve data for CaseID {caseid}')
 
 # Create DataFrame and save to CSV
-output_dir = "Preprocessing/FeatureExtraction"
+output_dir = "Preprocessing/Data"
 os.makedirs(output_dir, exist_ok=True)
-output_path = os.path.join(output_dir, "Data_AvgHR.csv")
+output_path = os.path.join(output_dir, "Data_avgRR_last15min.csv")
 df_results = pd.DataFrame(results)
 df_results.to_csv(output_path, index=False)
 
