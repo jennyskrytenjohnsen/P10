@@ -59,7 +59,12 @@ not_nan_values_for_caseid_precentage = round((not_nan_values_per_caseid/number_o
 over75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage >=75] #print for test,
 under75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage < 75] # print for test
 
-print('Over:', len(over75precentage), 'Under:', len(under75precentage) )
+print('Over 75 precentage for caseid:', len(over75precentage), 'Under 75 precentage for caseid:', len(under75precentage))
+
+over75precentage_feature = not_nan_values_for_feature_precentage[not_nan_values_for_feature_precentage >=75] 
+under75precentage_feature= not_nan_values_for_feature_precentage[not_nan_values_for_feature_precentage < 75] 
+
+print('Over 75 precentage for caseid:', len(over75precentage_feature), 'Under 75 precentage for caseid:', len(under75precentage_feature))
 
 
 
