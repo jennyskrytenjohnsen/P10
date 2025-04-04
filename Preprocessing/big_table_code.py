@@ -39,14 +39,32 @@ for filename in all_files:
    df = df.iloc[:, 1:] #Makes sure the caseid colum is not extracted for every csv file. 
    li.append(df) #just a random container for the dataframe 
 
-features_from_datafolder  = pd.concat(li, axis=1) # the axis = 1 makes sure the df is merged vertically
+features_from_datafolder  = pd.concat(li, axis=1) #mergin every csvfile, the axis = 1 makes sure the df is merged vertically
 
-frames = [df_features_from_clinical_data, features_from_datafolder] #Adds the manualy extracted features form the df_clinical 
-df_so_far_extracted_features = pd.concat(frames)
+frames = [df_features_from_clinical_data, features_from_datafolder] #merges the manualy extracted features form the df_clinical  & the csv files
+df_so_far_extracted_features = pd.concat(frames, axis=1) #merges the manualy extracted features form the df_clinical  & the csv files
 
-not_nan_values = df_so_far_extracted_features.notna().sum() 
-not_nan_values_precentage = round((not_nan_values/total_patients)*100)
-print('Each feature not nan values', not_nan_values_precentage)
+number_of_features = len(df_so_far_extracted_features.columns) #Calculates how mange features are there, the variable will be used later in the code 
+print('number_of_features:', number_of_features) #Print for test
+
+not_nan_values_for_feature = df_so_far_extracted_features.notna().sum()  #How many not nan values are there for each feature
+not_nan_values_for_feature_precentage = round((not_nan_values_for_feature/total_patients)*100) #Caluclates precentage
+#print('Each feature not nan values in precentage for feature\n', not_nan_values_for_feature_precentage) #Print for test :)
+
+
+not_nan_values_per_caseid = df_so_far_extracted_features.notna().sum(axis=1) #How many not nan values are there for each caseid
+not_nan_values_for_caseid_precentage = round((not_nan_values_per_caseid/number_of_features)*100) #Calculate precentage
+#print('Each feature not nan values in precentage for caseid\n', not_nan_values_for_caseid_precentage) 
+
+over75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage >=75] #print for test,
+under75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage < 75] # print for test
+
+print('Over:', len(over75precentage), 'Under:', len(under75precentage) )
+
+
+
+
+
 
 
 
