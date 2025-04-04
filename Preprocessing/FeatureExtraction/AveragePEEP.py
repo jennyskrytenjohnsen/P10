@@ -15,6 +15,12 @@ df_tracklist = pd.read_csv(track_list_url)
 clinical_data_url = "https://api.vitaldb.net/cases"
 df_clinical = pd.read_csv(clinical_data_url)
 
+# Load the CSV file containing signal percentage information
+data_signal = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_MC_below100trialtest2.csv")
+
+# Filter for only Primus/PEEP_MBAR track data
+data_signal = data_signal[data_signal["tname"] == "Primus/PEEP_MBAR"]
+
 # Prepare a list to store results
 results = []
 
@@ -47,9 +53,14 @@ for index, row in df_tracklist.iterrows():
                     mean_val = "No Data"
             else:
                 mean_val = "No Data"
-                
-            print(f'Average PEEP for CaseID {caseid}: {mean_val}')
-            results.append({'caseid': caseid, 'AvgPEEP': mean_val})
+            
+            # Check if the signal percentage for the caseid is more than 75
+            signal_info = data_signal[data_signal['caseid'] == caseid]
+            if not signal_info.empty and signal_info.iloc[0]['precentage_of_signal_is_there'] > 75:
+                print(f'Average PEEP for CaseID {caseid}: {mean_val}')
+                results.append({'caseid': caseid, 'AvgPEEP': mean_val})
+            else:
+                print(f'Skipping CaseID {caseid} due to signal percentage <= 75')
         else:
             print(f'Failed to retrieve data for CaseID {caseid}')
 
