@@ -13,7 +13,7 @@ special_variables = {
     'Solar8000/ART_MBP', 'Solar8000/NIBP_MBP', 'Solar8000/HR', 'CardioQ/HR', 'Vigilance/HR_AVG',
     'Vigileo/CO', 'EV1000/CO', 'Vigilance/CO', 'CardioQ/CO', 'Solar8000/PLETH_SPO2', 'Vigilance/SVO2',
     'Solar8000/FIO2', 'Primus/FIO2', 'Solar8000/RR', 'Primus/PEEP_MBAR', 'Solar8000/VENT_TV', 'Primus/TV',
-    'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR'
+    'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR, EV1000/ART_MBP', 'Solar8000/RR_CO2', 'Primus/COMPLIANCE', 'Solar8000/BT' 
 }
 
 def count_tracks():
@@ -30,7 +30,7 @@ def count_tracks():
 
     if save_number_of_count:
         df_saved_tracks = pd.DataFrame(save_number_of_count, columns=["tname",'how_many_times_is_patient_precent', 'precentage_recorded_of_total_patients'])
-        df_saved_tracks.to_csv("test_howmanypatiensisrecordedforeachtrack.csv", index=False)
+        df_saved_tracks.to_csv("howmanypatiensisrecordedforeachtrack_withallvalues.csv", index=False)
         print("CSV file has been saved.")
 
     else:
