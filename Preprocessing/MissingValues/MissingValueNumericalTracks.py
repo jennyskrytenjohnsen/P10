@@ -10,12 +10,13 @@ df_tracklist = pd.read_csv(track_list_url) #Skriv tracklist_url inne i parantese
 
 #Variables we would like to check for missing variables is written here
 special_variables = {
-    'Solar8000/PLETH_HR', 'Orchestra/NEPI_VOL', 'Orchestra/EPI_VOL', 'Orchestra/PHEN_VOL', 'Orchestra/VASO_VOL',
-    'Orchestra/DOPA_VOL', 'Orchestra/DOBU_VOL', 'Orchestra/MRN_VOL', 'Solar8000/NIBP_SBP', 'Solar8000/NIBP_DBP', 
-    'Solar8000/ART_MBP', 'Solar8000/NIBP_MBP', 'Solar8000/HR', 'CardioQ/HR', 'Vigilance/HR_AVG',
-    'Vigileo/CO', 'EV1000/CO', 'Vigilance/CO', 'CardioQ/CO', 'Solar8000/PLETH_SPO2', 'Vigilance/SVO2',
-    'Solar8000/FIO2', 'Primus/FIO2', 'Solar8000/RR', 'Primus/PEEP_MBAR', 'Solar8000/VENT_TV', 'Primus/TV',
-    'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR'
+    # 'Solar8000/PLETH_HR', 'Orchestra/NEPI_VOL', 'Orchestra/EPI_VOL', 'Orchestra/PHEN_VOL', 'Orchestra/VASO_VOL',
+    # 'Orchestra/DOPA_VOL', 'Orchestra/DOBU_VOL', 'Orchestra/MRN_VOL', 'Solar8000/NIBP_SBP', 'Solar8000/NIBP_DBP', 
+    # 'Solar8000/ART_MBP', 'Solar8000/NIBP_MBP', 'Solar8000/HR', 'CardioQ/HR', 'Vigilance/HR_AVG',
+    # 'Vigileo/CO', 'EV1000/CO', 'Vigilance/CO', 'CardioQ/CO', 'Solar8000/PLETH_SPO2', 'Vigilance/SVO2',
+    # 'Solar8000/FIO2', 'Primus/FIO2', 'Solar8000/RR', 'Primus/PEEP_MBAR', 'Solar8000/VENT_TV', 'Primus/TV',
+    # 'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR'
+    'Solar8000/ART_SBP', 'Solar8000/ART_DBP'
 }
 #The travks we would like to save will be saved in this list/array
 save_numerical_tracks = []
@@ -66,8 +67,8 @@ def count_missing_vaules_in_numeric_tracks():
     # Konverter listen til en DataFrame og lagre som CSV
     if save_numerical_tracks:
         df_saved_tracks = pd.DataFrame(save_numerical_tracks, columns=["caseid", "tname", "tid", "how_many_samples_should_there_be","total_samples_of_singal", "min_gap", "samples_missing", "precentage_of_signal_is_there"])
-        df_saved_tracks.to_csv("saved_tracks_numerical.csv", index=False)
-        print("CSV file 'saved_tracks_numerical.csv' has been saved.")
+        df_saved_tracks.to_csv("saved_tracks_numerical_sysdia.csv", index=False)
+        print("CSV file 'saved_tracks_numerical_sysdia.csv' has been saved.")
     else:
         print("No tracks met the criteria for saving.:()")
 

@@ -16,7 +16,7 @@ clinical_data_url = "https://api.vitaldb.net/cases"
 df_clinical = pd.read_csv(clinical_data_url)
 
 # Load the CSV file containing signal percentage information
-data_signal = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_MC_below100trialtest2.csv")
+data_signal = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_sysdia.csv")
 
 # Filter for only Solar8000/ART_SBP track data
 data_signal = data_signal[data_signal["tname"] == "Solar8000/ART_SBP"]
