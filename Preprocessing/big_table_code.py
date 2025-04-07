@@ -8,6 +8,9 @@ import os
 # Download clinical information
 clinical_information_url = "https://api.vitaldb.net/cases"
 df_clinical= pd.read_csv(clinical_information_url)
+
+#Male female has to be convertet to 1 and 0, No data is a shity variable
+
 total_patients = df_clinical['caseid'].nunique() 
 # Show all rows
 pd.set_option('display.max_rows', None)  
@@ -23,6 +26,9 @@ pd.set_option('display.float_format', '{:.3f}'.format)
 
 df_features_from_clinical_data = df_clinical[['caseid','age','sex', 'height', 'weight', 'bmi', 'preop_dm', 'asa', 'preop_htn']]
 #df_features_from_clinical_data.info() #All features have over 75% present data, and therefore it will come in:))
+
+df_features_from_clinical_data['sex'].replace('F', 0,inplace=True)
+df_features_from_clinical_data['sex'].replace('M', 1,inplace=True)
 
 ###################################################################################################################
 path = "C:/Users/johns/Documents/10semester/P10/Preprocessing/Data" #This is the path where the datafiles is saved on you coumputer
@@ -43,6 +49,10 @@ features_from_datafolder  = pd.concat(li, axis=1) #mergin every csvfile, the axi
 
 frames = [df_features_from_clinical_data, features_from_datafolder] #merges the manualy extracted features form the df_clinical  & the csv files
 df_so_far_extracted_features = pd.concat(frames, axis=1) #merges the manualy extracted features form the df_clinical  & the csv files
+
+df_so_far_extracted_features.replace('No Data', pd.NA ,inplace=True)
+
+df_so_far_extracted_features.to_csv('df_so_far_extracted_features.csv', index=False)
 
 number_of_features = len(df_so_far_extracted_features.columns) #Calculates how mange features are there, the variable will be used later in the code 
 print('number_of_features:', number_of_features) #Print for test
