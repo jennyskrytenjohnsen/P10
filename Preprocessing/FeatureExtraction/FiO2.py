@@ -4,7 +4,7 @@ import io
 import numpy as np
 import os
 
-# Track identifier for SpO2
+# Track identifier for FiO2
 target_track = 'Primus/FIO2'
 
 # Load track list
@@ -51,14 +51,14 @@ for index, row in df_tracklist.iterrows():
                 last_15_min = (trackdata['Time'] >= opend - 900) & (trackdata['Time'] <= opend)
                 trackdata_last = trackdata[last_15_min]
 
-                # Calculate mean SpO2
+                # Calculate mean FiO2
                 if target_track in trackdata.columns and not trackdata_last.empty:
-                    mean_spo2 = trackdata_last[target_track].mean()
+                    mean_FiO2 = trackdata_last[target_track].mean()
                 else:
-                    mean_spo2 = np.nan
+                    mean_FiO2 = np.nan
 
-                print(f'Average SpO2 for CaseID {caseid}: {mean_spo2}')
-                results.append({'caseid': caseid, 'data_spo2': mean_spo2})
+                print(f'Average FiO2 for CaseID {caseid}: {mean_FiO2}')
+                results.append({'caseid': caseid, 'data_FiO2': mean_FiO2})
             else:
                 print(f'No clinical info for CaseID {caseid}')
         else:
