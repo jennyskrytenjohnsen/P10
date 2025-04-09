@@ -3,72 +3,121 @@ import requests
 import io
 import numpy as np
 import os
+import multiprocessing
 
-# Track identifier for heart rate
 HR_track = {'Solar8000/HR'}
 
-# Load track list
 track_list_url = "https://api.vitaldb.net/trks"
 df_tracklist = pd.read_csv(track_list_url)
 
-# Load clinical data
 clinical_data_url = "https://api.vitaldb.net/cases"
 df_clinical = pd.read_csv(clinical_data_url)
 
-# Load the CSV file containing signal percentage information
-data_signal = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_MC_below100trialtest2.csv")
-
-# Filter for only Solar8000/HR track data
+data_signal = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_MC_total_15min.csv")
 data_signal = data_signal[data_signal["tname"] == "Solar8000/HR"]
 
-# Prepare a list to store results
-results = []
+def worker(subset):
+    results_local = []
 
-# Iterate over each row in the DataFrame
-for index, row in df_tracklist.iterrows():
-    if row['tname'] in HR_track:  # Check if track name is in our target list
-        trackid = row['tid']  # Track ID
-        caseid = row['caseid']  # Case ID
-        print(f'Processing CaseID: {caseid}, TrackName: {row["tname"]}')
-        
-        # Extract numerical track data from API
-        trackdata_url = f"https://api.vitaldb.net/{trackid}"
-        response = requests.get(trackdata_url)
-        
-        if response.status_code == 200:
-            trackdata = pd.read_csv(io.StringIO(response.text))
-            
-            # Get opstart and opend times for the case
-            case_info = df_clinical[df_clinical['caseid'] == caseid]
-            if not case_info.empty:
-                opstart = case_info.iloc[0]['opstart']
-                opend = case_info.iloc[0]['opend']
-                
-                # Filter data to only include values between opstart and opend
-                trackdata_filtered = trackdata[(trackdata['Time'] >= opstart) & (trackdata['Time'] <= opend)]
-                
-                if 'Solar8000/HR' in trackdata_filtered.columns and not trackdata_filtered.empty:
-                    mean_val = trackdata_filtered['Solar8000/HR'].mean()
-                else:
-                    mean_val = "No Data"
+    for index, row in subset.iterrows():
+        if row['tname'] in HR_track:
+            trackid = row['tid']
+            caseid = row['caseid']
+            print(f'Processing CaseID: {caseid}, TrackName: {row["tname"]}')
+
+            trackdata_url = f"https://api.vitaldb.net/{trackid}"
+            response = requests.get(trackdata_url)
+
+            if response.status_code == 200:
+                trackdata = pd.read_csv(io.StringIO(response.text))
+                case_info = df_clinical[df_clinical['caseid'] == caseid]
+                signal_info = data_signal[data_signal['caseid'] == caseid]
+
+                if not case_info.empty:
+                    opstart = case_info.iloc[0]['opstart']
+                    opend = case_info.iloc[0]['opend']
+
+                    trackdata_filtered = trackdata[(trackdata['Time'] >= opstart) & (trackdata['Time'] <= opend)]
+
+                    if (
+                        not signal_info.empty and
+                        signal_info.iloc[0]['precentage_of_signal_is_there_total'] > 75 and
+                        signal_info.iloc[0]['precentage_of_signal_is_there_15min'] > 75 and
+                        'Solar8000/HR' in trackdata_filtered.columns and
+                        not trackdata_filtered.empty
+                    ):
+                        if not np.issubdtype(trackdata_filtered['Time'].dtype, np.number):
+                            trackdata_filtered['Time'] = pd.to_numeric(trackdata_filtered['Time'], errors='coerce')
+
+                        trackdata_filtered['HR_filtered'] = trackdata_filtered['Solar8000/HR'].rolling(
+                            window=9, center=True, min_periods=1).median()
+
+                        total_seconds = len(trackdata_filtered)
+                        seconds_below_30 = (trackdata_filtered['HR_filtered'] < 30).sum()
+                        seconds_below_60 = (trackdata_filtered['HR_filtered'] < 60).sum()
+                        seconds_above_100 = (trackdata_filtered['HR_filtered'] > 100).sum()
+
+                        if total_seconds > 0:
+                            percent_below_30 = (seconds_below_30 / total_seconds) * 100
+                            percent_below_60 = (seconds_below_60 / total_seconds) * 100
+                            percent_above_100 = (seconds_above_100 / total_seconds) * 100
+                        else:
+                            percent_below_30 = percent_below_60 = percent_above_100 = "No Data"
+
+                        mean_full = trackdata_filtered['HR_filtered'].mean()
+
+                        start_15min = max(opstart, opend - 900)
+                        last_15min_data = trackdata_filtered[
+                            (trackdata_filtered['Time'] >= start_15min) &
+                            (trackdata_filtered['Time'] <= opend)
+                        ].copy()  # to avoid SettingWithCopyWarning
+
+                        last_15min_data['HR_filtered'] = last_15min_data['HR_filtered'].rolling(
+                            window=9, center=True, min_periods=1).median()
+                        mean_15min = last_15min_data['HR_filtered'].mean()
+
+                        results_local.append({
+                            'caseid': caseid,
+                            'HR_n30': percent_below_30,
+                            'HR_n60': percent_below_60,
+                            'HR_n100': percent_above_100,
+                            'HR_total': mean_full,
+                            'HR_w15min': mean_15min
+                        })
+
+                        print(f'→ CaseID {caseid}: HR<30: {percent_below_30:.2f}%, HR<60: {percent_below_60:.2f}%, HR>100: {percent_above_100:.2f}%')
+                        print(f'→ AvgHR (full): {mean_full:.2f}, AvgHR (last 15 min): {mean_15min:.2f}')
+                    else:
+                        print(f'Skipping CaseID {caseid} due to poor signal quality or missing HR data.')
             else:
-                mean_val = "No Data"
-            
-            # Check if the signal percentage for the caseid is more than 75
-            signal_info = data_signal[data_signal['caseid'] == caseid]
-            if not signal_info.empty and signal_info.iloc[0]['precentage_of_signal_is_there'] > 75:
-                print(f'Average HR for CaseID {caseid}: {mean_val}')
-                results.append({'caseid': caseid, 'AvgHR': mean_val})
-            else:
-                print(f'Skipping CaseID {caseid} due to signal percentage <= 75')
-        else:
-            print(f'Failed to retrieve data for CaseID {caseid}')
+                print(f'Failed to retrieve data for CaseID {caseid}')
+    
+    return results_local
 
-# Create DataFrame and save to CSV
-output_dir = "Preprocessing/FeatureExtraction"
-os.makedirs(output_dir, exist_ok=True)
-output_path = os.path.join(output_dir, "Data_AvgHR.csv")
-df_results = pd.DataFrame(results)
-df_results.to_csv(output_path, index=False)
 
-print(f'Data saved to {output_path}')
+def parallel_for_loop(df, num_workers=None):
+    if num_workers is None:
+        num_workers = multiprocessing.cpu_count()
+
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Input data must be a DataFrame.")
+
+    chunks = np.array_split(df, num_workers)
+
+    with multiprocessing.Pool(processes=num_workers) as pool:
+        results_nested = pool.map(worker, chunks)
+
+    return [item for sublist in results_nested for item in sublist]
+
+
+if __name__ == "__main__":
+    all_results = parallel_for_loop(df_tracklist)
+    
+    output_dir = "Preprocessing/Data/NewData"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "Data_HR.csv")
+
+    df_results = pd.DataFrame(all_results)
+    df_results.to_csv(output_path, index=False)
+
+    print(f'Data saved to {output_path}')
