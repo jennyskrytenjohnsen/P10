@@ -3,9 +3,10 @@ import requests
 import io
 import numpy as np
 import os
+import multiprocessing
 
-# Track identifier for heart rate
-Compl_track = {'Primus/COMPLIANCE'}
+# Track identifier for Compliance
+Compliance_track = {'Primus/COMPLIANCE'}
 
 # Load track list
 track_list_url = "https://api.vitaldb.net/trks"
@@ -16,59 +17,114 @@ clinical_data_url = "https://api.vitaldb.net/cases"
 df_clinical = pd.read_csv(clinical_data_url)
 
 # Load the CSV file containing signal percentage information
-data_signal = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_MC_below100trialtest2.csv")
+data_signal = pd.read_csv("Preprocessing/MissingValues/saved_tracks_numerical_MC_total_15min.csv")
 
 # Filter for only Primus/COMPLIANCE track data
 data_signal = data_signal[data_signal["tname"] == "Primus/COMPLIANCE"]
 
 # Prepare a list to store results
+# manager = multiprocessing.Manager()
+# results = manager.list()
 results = []
 
-# Iterate over each row in the DataFrame
-for index, row in df_tracklist.iterrows():
-    if row['tname'] in Compl_track:  # Check if track name is in our target list
-        trackid = row['tid']  # Track ID
-        caseid = row['caseid']  # Case ID
-        print(f'Processing CaseID: {caseid}, TrackName: {row["tname"]}')
-        
-        # Extract numerical track data from API
-        trackdata_url = f"https://api.vitaldb.net/{trackid}"
-        response = requests.get(trackdata_url)
-        
-        if response.status_code == 200:
-            trackdata = pd.read_csv(io.StringIO(response.text))
-            
-            # Get opstart and opend times for the case
-            case_info = df_clinical[df_clinical['caseid'] == caseid]
-            if not case_info.empty:
-                opstart = case_info.iloc[0]['opstart']
-                opend = case_info.iloc[0]['opend']
-                
-                # Filter data to only include values between opstart and opend
-                trackdata_filtered = trackdata[(trackdata['Time'] >= opstart) & (trackdata['Time'] <= opend)]
-                
-                if 'Primus/COMPLIANCE' in trackdata_filtered.columns and not trackdata_filtered.empty:
-                    mean_val = trackdata_filtered['Primus/COMPLIANCE'].mean()
+def worker(subset):
+    local_results = []
+    subset = subset.reset_index(drop=True)
+    for index, row in subset.iterrows():
+        if row['tname'] in Compliance_track:
+            trackid = row['tid']
+            caseid = row['caseid']
+            print(f'Processing CaseID: {caseid}, TrackName: {row["tname"]}')
+
+            # Extract numerical track data from API
+            trackdata_url = f"https://api.vitaldb.net/{trackid}"
+            response = requests.get(trackdata_url)
+
+            if response.status_code == 200:
+                trackdata = pd.read_csv(io.StringIO(response.text))
+
+                # Get opstart and opend times for the case
+                case_info = df_clinical[df_clinical['caseid'] == caseid]
+                if not case_info.empty:
+                    opstart = case_info.iloc[0]['opstart']
+                    opend = case_info.iloc[0]['opend']
+
+                    # Filter data to only include values between opstart and opend
+                    trackdata_filtered = trackdata[(trackdata['Time'] >= opstart) & (trackdata['Time'] <= opend)]
+
+                    if 'Primus/COMPLIANCE' in trackdata_filtered.columns and not trackdata_filtered.empty:
+                        # Apply median filter with window size 5 (can adjust as needed)
+                        trackdata_filtered['Compliance_filtered'] = trackdata_filtered['Primus/COMPLIANCE'].rolling(window=5, center=True, min_periods=1).median()
+
+                        # Get signal quality info
+                        signal_info = data_signal[data_signal['caseid'] == caseid]
+                        avg_total = avg_15min = None
+
+                        if not signal_info.empty:
+                            pct_total = signal_info.iloc[0]['precentage_of_signal_is_there_total']
+                            pct_15min = signal_info.iloc[0]['precentage_of_signal_is_there_15min']
+
+                            if pct_total > 75:
+                                avg_total = trackdata_filtered['Compliance_filtered'].mean()
+
+                            # Last 15 minutes of the operation
+                            opend_time = trackdata_filtered['Time'].max()
+                            last_15min_start = opend_time - 15 * 60 * 1000  # Assuming time in milliseconds
+                            last_15min_data = trackdata_filtered[trackdata_filtered['Time'] >= last_15min_start].copy()
+
+                            if pct_15min > 75 and not last_15min_data.empty:
+                                avg_15min = last_15min_data['Compliance_filtered'].mean()
+
+                            local_results.append({
+                                'caseid': caseid,
+                                'Compliance_total': avg_total,
+                                'Compliance_w15min': avg_15min
+                            })
+                        else:
+                            print(f"No signal quality data for CaseID {caseid}")
+                    else:
+                        print(f"No Primus/COMPLIANCE data for CaseID {caseid}")
                 else:
-                    mean_val = "No Data"
+                    print(f"Missing case info for CaseID {caseid}")
             else:
-                mean_val = "No Data"
-            
-            # Check if the signal percentage for the caseid is more than 75
-            signal_info = data_signal[data_signal['caseid'] == caseid]
-            if not signal_info.empty and signal_info.iloc[0]['precentage_of_signal_is_there'] > 75:
-                print(f'Average Compl for CaseID {caseid}: {mean_val}')
-                results.append({'caseid': caseid, 'AvgCompl': mean_val})
-            else:
-                print(f'Skipping CaseID {caseid} due to signal percentage <= 75')
-        else:
-            print(f'Failed to retrieve data for CaseID {caseid}')
+                print(f'Failed to retrieve data for CaseID {caseid}')
+    # results.extend(local_results)
+    return local_results
 
-# Create DataFrame and save to CSV
-output_dir = "Preprocessing/Data"
-os.makedirs(output_dir, exist_ok=True)
-output_path = os.path.join(output_dir, "Data_AvgCompl.csv")
-df_results = pd.DataFrame(results)
-df_results.to_csv(output_path, index=False)
 
-print(f'Data saved to {output_path}')
+def parallel_for_loop(df, num_workers=None):
+    if num_workers is None:
+        num_workers = multiprocessing.cpu_count()
+
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Input data must be a DataFrame.")
+
+    chunks = np.array_split(df, num_workers)
+    processes = []
+
+    # for chunk in chunks:
+    #     p = multiprocessing.Process(target=worker, args=(chunk,))
+    #     processes.append(p)
+    #     p.start()
+
+    # for p in processes:
+    #     p.join()
+    
+    with multiprocessing.Pool(processes=num_workers) as pool:
+        results_nested = pool.map(worker, chunks)
+
+    return [item for sublist in results_nested for item in sublist]
+
+    # return list(results)
+
+
+if __name__ == "__main__":
+    result = parallel_for_loop(df_tracklist)
+
+    output_dir = "Preprocessing/Data/NewData"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "Data_Compliance.csv")
+    df_results = pd.DataFrame(result)
+    df_results.to_csv(output_path, index=False)
+
+    print(f'Data saved to {output_path}')

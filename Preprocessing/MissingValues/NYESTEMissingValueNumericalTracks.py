@@ -21,8 +21,8 @@ def worker(subset):
     'Solar8000/ART_MBP', 'Solar8000/NIBP_MBP', 'Solar8000/HR', 'CardioQ/HR', 'Vigilance/HR_AVG',
     'Vigileo/CO', 'EV1000/CO', 'Vigilance/CO', 'CardioQ/CO', 'Solar8000/PLETH_SPO2', 'Vigilance/SVO2',
     'Solar8000/FIO2', 'Primus/FIO2', 'Solar8000/RR', 'Primus/PEEP_MBAR', 'Solar8000/VENT_TV', 'Primus/TV',
-    'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR',
-    'Solar8000/ART_SBP', 'Solar8000/ART_DBP'}
+    'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR', 'Solar8000/ART_SBP', 'Solar8000/ART_DBP', 
+    'Primus/COMPLIANCE', 'Vigilance/BT_PA', 'Solar8000/BT '} 
 
     for index, row in subset.iterrows():
         if row['tname'] in special_variables:
