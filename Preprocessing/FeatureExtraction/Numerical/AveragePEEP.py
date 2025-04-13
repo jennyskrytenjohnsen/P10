@@ -77,8 +77,8 @@ def worker(subset):
 
                             local_results.append({
                                 'caseid': caseid,
-                                'AvgPEEP_Total': avg_total,
-                                'AvgPEEP_Last15min': avg_15min
+                                'PEEP_total': avg_total,
+                                'PEEP_w15min': avg_15min
                             })
                         else:
                             print(f"No signal quality data for CaseID {caseid}")
