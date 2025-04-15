@@ -16,13 +16,14 @@ def worker(subset):
     print("Processing subset of size:", index_len)
     save_numerical_tracks = []
     special_variables = {
-    'Solar8000/PLETH_HR', 'Orchestra/NEPI_VOL', 'Orchestra/EPI_VOL', 'Orchestra/PHEN_VOL', 'Orchestra/VASO_VOL',
-    'Orchestra/DOPA_VOL', 'Orchestra/DOBU_VOL', 'Orchestra/MRN_VOL', 'Solar8000/NIBP_SBP', 'Solar8000/NIBP_DBP', 
-    'Solar8000/ART_MBP', 'Solar8000/NIBP_MBP', 'Solar8000/HR', 'CardioQ/HR', 'Vigilance/HR_AVG',
-    'Vigileo/CO', 'EV1000/CO', 'Vigilance/CO', 'CardioQ/CO', 'Solar8000/PLETH_SPO2', 'Vigilance/SVO2',
-    'Solar8000/FIO2', 'Primus/FIO2', 'Solar8000/RR', 'Primus/PEEP_MBAR', 'Solar8000/VENT_TV', 'Primus/TV',
-    'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR', 'Solar8000/ART_SBP', 'Solar8000/ART_DBP', 
-    'Primus/COMPLIANCE', 'Vigilance/BT_PA', 'Solar8000/BT '} 
+    # 'Solar8000/PLETH_HR', 'Orchestra/NEPI_VOL', 'Orchestra/EPI_VOL', 'Orchestra/PHEN_VOL', 'Orchestra/VASO_VOL',
+    # 'Orchestra/DOPA_VOL', 'Orchestra/DOBU_VOL', 'Orchestra/MRN_VOL', 'Solar8000/NIBP_SBP', 'Solar8000/NIBP_DBP', 
+    # 'Solar8000/ART_MBP', 'Solar8000/NIBP_MBP', 'Solar8000/HR', 'CardioQ/HR', 'Vigilance/HR_AVG',
+    # 'Vigileo/CO', 'EV1000/CO', 'Vigilance/CO', 'CardioQ/CO', 'Solar8000/PLETH_SPO2', 'Vigilance/SVO2',
+    # 'Solar8000/FIO2', 'Primus/FIO2', 'Solar8000/RR', 'Primus/PEEP_MBAR', 'Solar8000/VENT_TV', 'Primus/TV',
+    # 'Solar8000/VENT_MEAS_PEEP', 'Solar8000/VENT_PIP', 'Primus/PIP_MBAR', 'Solar8000/ART_SBP', 'Solar8000/ART_DBP', 
+    # 'Primus/COMPLIANCE', 
+    'Vigilance/BT_PA', 'Solar8000/BT '} 
 
     for index, row in subset.iterrows():
         if row['tname'] in special_variables:
@@ -94,7 +95,7 @@ if __name__ == "__main__":
     result = parallel_for_loop(df_tracklist)
     if result:
         df_saved_tracks = pd.DataFrame(result, columns=["caseid", "tname", "tid", "how_many_samples_should_there_be","total_samples_of_singal", "min_gap", "samples_missing", "precentage_of_signal_is_there_total", "precentage_of_signal_is_there_15min"])
-        df_saved_tracks.to_csv("saved_tracks_numerical_MC_total_15min.csv", index=False)
+        df_saved_tracks.to_csv("saved_tracks_numerical_MC_total_15min_BT.csv", index=False)
         print("CSV file has been saved.")
     else:
         print("No tracks met the criteria for saving.:()")
