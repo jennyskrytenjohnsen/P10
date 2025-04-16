@@ -12,41 +12,47 @@ from sklearn.metrics import (
 
 # Load csv file with features 
 df_data_features = pd.read_csv("df_so_far_extracted_features.csv")
-#print(df_data_features.head())
+# print(df_data_features.head())
 
 # Load csv file with labels
 df_data_labels = pd.read_csv("For_machinelearning/number_of_days_in_ICU.csv")
-#print(df_data_labels.head())
-
-# Extract case IDs for group splitting
-case_ids = df_data_features["caseid"].unique()
+# print(df_data_labels.head())
 
 # Extract features and labels
 X = df_data_features
 y = df_data_labels["icu_days_binary"]
 
-# Split the unique case IDs into train and test sets
-train_ids, test_ids = train_test_split(case_ids, test_size=0.2, random_state=42)
+# Merge labels with caseid for stratified splitting
+df_labels = df_data_labels.copy()
+df_labels["caseid"] = df_data_features["caseid"]  # ensure caseid is in label dataframe
+case_labels = df_labels[["caseid", "icu_days_binary"]].drop_duplicates()
+
+# Stratified split based on ICU label at case level
+train_ids, test_ids = train_test_split(
+    case_labels["caseid"],
+    test_size=0.2,
+    random_state=42,
+    stratify=case_labels["icu_days_binary"]  # ensures balanced class distribution
+)
 
 # Create boolean masks to filter rows by case ID
-#To ensure that no patient (caseid) is in both train and test sets 
+# Ensures that no patient (caseid) appears in both train and test sets
 train_mask = df_data_features["caseid"].isin(train_ids)
 test_mask = df_data_features["caseid"].isin(test_ids)
 
-# Apply masks to select features and targets
+# Apply masks to select features and targets, and drop caseid column from features
 X_train = df_data_features[train_mask].drop(columns=["caseid"])
 X_test = df_data_features[test_mask].drop(columns=["caseid"])
 y_train = y[train_mask]
 y_test = y[test_mask]
 
 # Build pipeline with XGBoost (no imputer is included)
-# With hyperparameters
-#the learning rate and estimators, can lead to better generalization 
-#max depth -> shallow trees = lower risk of overfitting
-#subsample and colsample_bytree -> add randomness to the model
-#gamma + min_child_weight -> avoid splits that do not improve the model
-#logloss, measure how well the model predicits probabilities
-# LogLoss = - [ y * log(p) + (1 - y) * log(1 - p) ]
+# With tuned hyperparameters:
+# - learning rate and n_estimators can improve generalization
+# - max_depth limits overfitting
+# - subsample and colsample_bytree add randomness for robustness
+# - gamma and min_child_weight control complexity of splits
+# - eval_metric='logloss' is a common choice for binary classification
 pipeline = Pipeline([
     ('model', XGBClassifier(
         n_estimators=300,
@@ -67,6 +73,14 @@ pipeline.fit(X_train, y_train)
 # Predict on test set
 y_pred = pipeline.predict(X_test)
 y_prob = pipeline.predict_proba(X_test)[:, 1]  # probability for positive class
+
+#check stratification in test and train 
+print("Train set ICU label distribution:")
+print(y_train.value_counts(normalize=True))
+
+print("\nTest set ICU label distribution:")
+print(y_test.value_counts(normalize=True))
+
 
 # Evaluate performance
 print("\n Performance Metrics:")
