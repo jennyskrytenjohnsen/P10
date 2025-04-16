@@ -24,7 +24,7 @@ pd.set_option('display.max_colwidth', None)
 # Prevent scientific notation (optional)
 pd.set_option('display.float_format', '{:.3f}'.format)
 
-df_features_from_clinical_data = df_clinical[['caseid','age','sex', 'height', 'weight', 'bmi', 'preop_dm', 'asa', 'preop_htn']]
+df_features_from_clinical_data = df_clinical[['caseid','age','sex', 'height', 'weight', 'bmi', 'preop_dm', 'asa', 'preop_htn', 'preop_paco2']]
 #df_features_from_clinical_data.info() #All features have over 75% present data, and therefore it will come in:))
 
 df_features_from_clinical_data['sex'] = df_features_from_clinical_data['sex'].replace({'M': 1, 'F': 0})
@@ -66,16 +66,16 @@ def calculations_one_on_the_dataset():
    not_nan_values_for_caseid_precentage = round((not_nan_values_per_caseid/number_of_features)*100) #Calculate precentage
    #print('Each feature not nan values in precentage for caseid\n', not_nan_values_for_caseid_precentage) 
 
-   over75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage >=75] #print for test,
-   under75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage < 75] # print for test
+   over75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage >=75] # how many caseids have over 75% data
+   under75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage < 75] # phow many caseids have under 75% data
 
    print('Over 75 precentage for caseid:', len(over75precentage), 'Under 75 precentage for caseid:', len(under75precentage))
 
-   over75precentage_feature = not_nan_values_for_feature_precentage[not_nan_values_for_feature_precentage >=75] 
-   under75precentage_feature= not_nan_values_for_feature_precentage[not_nan_values_for_feature_precentage < 75] 
-
+   over75precentage_feature = not_nan_values_for_feature_precentage[not_nan_values_for_feature_precentage >=75]  # how many features have over 75% data
+   under75precentage_feature= not_nan_values_for_feature_precentage[not_nan_values_for_feature_precentage < 75]  # how many features have under 75% data
    print('Over 75 precentage for feature:', len(over75precentage_feature), 'Under 75 precentage for feature:', len(under75precentage_feature))
 
+   print(df_so_far_extracted_features.info())
 
 calculations_one_on_the_dataset()
 

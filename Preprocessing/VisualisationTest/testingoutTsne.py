@@ -11,7 +11,7 @@ print("pool version", threadpoolctl.__version__)
 #clinical_information_url = "https://api.vitaldb.net/cases"
 #df_clinical= pd.read_csv(clinical_information_url)
 icustay = pd.read_csv('C:/Users/johns/Documents/10semester/number_of_days_in_ICU.csv')
-df_bigtable = pd.read_csv('C:/Users/johns/Documents/10semester/P10/df_so_far_extracted_features.csv')
+df_bigtable = pd.read_csv('C:/Users/johns/Documents/10semester/P10/df_extracted_features.csv')
 
 df_bigtable= df_bigtable.dropna(axis=1)
 
@@ -50,4 +50,4 @@ def unifrom_map():
     #plt.colorbar(scatter, label='ICU status')
     plt.show()
 
-unifrom_map()
+t_distributed_sne()
