@@ -49,42 +49,43 @@ def worker(subset):
                     trackdata_filtered = trackdata[(trackdata['Time'] >= opstart) & (trackdata['Time'] <= opend)]
 
                     if 'Solar8000/ART_DBP' in trackdata_filtered.columns and not trackdata_filtered.empty:
-                        # Apply moving median filter with window of 5 samples
+                        # Apply moving median filter
                         trackdata_filtered['Filtered'] = trackdata_filtered['Solar8000/ART_DBP'].rolling(window=5, center=True).median()
-                        trackdata_filtered = trackdata_filtered.dropna(subset=['Filtered'])  # Drop rows where rolling window gives NaN
+                        trackdata_filtered = trackdata_filtered.dropna(subset=['Filtered'])
 
-                        # Signal info
                         signal_info = data_signal[data_signal['caseid'] == caseid]
 
                         avg_all = "NaN"
                         avg_15min = "NaN"
+                        avg_15minMV = "NaN"
                         perc_below_40 = "NaN"
                         perc_above_100 = "NaN"
 
                         if not signal_info.empty:
                             if signal_info.iloc[0]['precentage_of_signal_is_there_total'] > 75:
                                 avg_all = trackdata_filtered['Filtered'].mean()
-
-                                # Percentage below 40 and above 100
                                 total_points = len(trackdata_filtered)
                                 perc_below_40 = (trackdata_filtered['Filtered'] < 40).sum() / total_points * 100
                                 perc_above_100 = (trackdata_filtered['Filtered'] > 100).sum() / total_points * 100
 
-                            if signal_info.iloc[0]['precentage_of_signal_is_there_15min'] > 75:
-                                max_time = trackdata_filtered['Time'].max()
-                                start_15min = max_time - 15 * 60
-                                data_last_15 = trackdata_filtered[trackdata_filtered['Time'] >= start_15min]
-                                avg_15min = data_last_15['Filtered'].mean() if not data_last_15.empty else "NaN"
+                            max_time = trackdata_filtered['Time'].max()
+                            start_15min = max_time - 15 * 60
+                            data_last_15 = trackdata_filtered[trackdata_filtered['Time'] >= start_15min]
 
-                            results.append({
-                                'caseid': caseid,
-                                'DiaBP_total': avg_all,
-                                'DiaBP_w15min': avg_15min,
-                                'DiaBP_n40': perc_below_40,
-                                'DiaBP_n100': perc_above_100
-                            })
-                        else:
-                            print(f'No signal info for CaseID {caseid}')
+                            if not data_last_15.empty:
+                                avg_15minMV = data_last_15['Filtered'].mean()
+                                # Check if we have >75% signal in the 15min window
+                                if signal_info.iloc[0]['precentage_of_signal_is_there_15min'] > 75:
+                                    avg_15min = avg_15minMV
+
+                        results.append({
+                            'caseid': caseid,
+                            'DiaBP_total': avg_all,
+                            'DiaBP_w15min': avg_15min,
+                            'DiaBP_w15minMV': avg_15minMV,
+                            'DiaBP_n40': perc_below_40,
+                            'DiaBP_n100': perc_above_100
+                        })
                     else:
                         print(f'Missing data for CaseID {caseid}')
                 else:
