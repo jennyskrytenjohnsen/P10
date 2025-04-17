@@ -7,7 +7,7 @@ import multiprocessing
 
 # Track identifier for heart rate
 SysBP_track = {'Solar8000/ART_SBP'} 
- 
+
 # Load track list
 track_list_url = "https://api.vitaldb.net/trks"
 df_tracklist = pd.read_csv(track_list_url)
@@ -60,6 +60,7 @@ def worker(subset):
                         avg_15min = "NaN"
                         perc_below_80 = "NaN"
                         perc_above_180 = "NaN"
+                        avg_15min_mv = "NaN"  # New column to capture the average with missing values allowed
 
                         if not signal_info.empty:
                             if signal_info.iloc[0]['precentage_of_signal_is_there_total'] > 75:
@@ -70,18 +71,27 @@ def worker(subset):
                                 perc_below_80 = (trackdata_filtered['Filtered'] < 80).sum() / total_points * 100
                                 perc_above_180 = (trackdata_filtered['Filtered'] > 180).sum() / total_points * 100
 
+                            # Calculate the 15 minute average, handling missing values
                             if signal_info.iloc[0]['precentage_of_signal_is_there_15min'] > 75:
                                 max_time = trackdata_filtered['Time'].max()
                                 start_15min = max_time - 15 * 60
                                 data_last_15 = trackdata_filtered[trackdata_filtered['Time'] >= start_15min]
-                                avg_15min = data_last_15['Filtered'].mean() if not data_last_15.empty else "NaN"
+
+                                # If there is any data in the last 15 minutes, calculate average
+                                if not data_last_15.empty:
+                                    avg_15min = data_last_15['Filtered'].mean()
+                                    avg_15min_mv = data_last_15['Filtered'].mean()  # Allowing missing values in this column as well
+                                else:
+                                    avg_15min = "NaN"
+                                    avg_15min_mv = "NaN"
 
                             results.append({
                                 'caseid': caseid,
                                 'SysBP_total': avg_all,
                                 'SysBP_w15min': avg_15min,
                                 'SysBP_n80': perc_below_80,
-                                'SysBP_n180': perc_above_180
+                                'SysBP_n180': perc_above_180,
+                                'SysBP_w15minMV': avg_15min_mv  # Save the value with missing data allowed
                             })
                         else:
                             print(f'No signal info for CaseID {caseid}')
