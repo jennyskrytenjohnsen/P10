@@ -78,7 +78,8 @@ def worker(subset):
             'caseid': caseid,
             'SpO2_total': np.nan,
             'SpO2_w15min': np.nan,
-            'SpO2_n90': np.nan
+            'SpO2_n90': np.nan,
+            'SpO2_w15minMV': np.nan  # New column for raw values
         }
 
         # Compute average over entire operation
@@ -87,9 +88,19 @@ def worker(subset):
             below_90 = trackdata_full[target_track] < 90
             result['SpO2_n90'] = below_90.sum() / len(trackdata_full) * 100
 
-        # Compute average over last 15 minutes
-        if perc_15min > 75 and not trackdata_last.empty:
-            result['SpO2_w15min'] = trackdata_last[target_track].mean()
+        # Compute average over last 15 minutes with more lenient missing data tolerance
+        if not trackdata_last.empty:
+            valid_data_last = trackdata_last[target_track].dropna()
+            if len(valid_data_last) > 0:
+                # If there's any valid data, calculate the average for both columns
+                result['SpO2_w15minMV'] = trackdata_last[target_track].mean()
+                if perc_15min > 75:
+                    result['SpO2_w15min'] = valid_data_last.mean()
+                else:
+                    result['SpO2_w15min'] = trackdata_last[target_track].mean()  # Average without checking missing percentage
+            else:
+                result['SpO2_w15min'] = np.nan
+                result['SpO2_w15minMV'] = np.nan
 
         print(f'Finished CaseID {caseid}')
         local_results.append(result)
