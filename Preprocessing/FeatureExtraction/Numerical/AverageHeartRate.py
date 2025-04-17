@@ -39,59 +39,68 @@ def worker(subset):
 
                     trackdata_filtered = trackdata[(trackdata['Time'] >= opstart) & (trackdata['Time'] <= opend)]
 
-                    if (
-                        not signal_info.empty and
-                        signal_info.iloc[0]['precentage_of_signal_is_there_total'] > 75 and
-                        signal_info.iloc[0]['precentage_of_signal_is_there_15min'] > 75 and
-                        'Solar8000/HR' in trackdata_filtered.columns and
-                        not trackdata_filtered.empty
-                    ):
-                        if not np.issubdtype(trackdata_filtered['Time'].dtype, np.number):
-                            trackdata_filtered['Time'] = pd.to_numeric(trackdata_filtered['Time'], errors='coerce')
+                    if not np.issubdtype(trackdata_filtered['Time'].dtype, np.number):
+                        trackdata_filtered['Time'] = pd.to_numeric(trackdata_filtered['Time'], errors='coerce')
 
-                        trackdata_filtered['HR_filtered'] = trackdata_filtered['Solar8000/HR'].rolling(
-                            window=9, center=True, min_periods=1).median()
+                    # Median filtering
+                    trackdata_filtered['HR_filtered'] = trackdata_filtered['Solar8000/HR'].rolling(
+                        window=9, center=True, min_periods=1).median()
 
-                        total_seconds = len(trackdata_filtered)
-                        seconds_below_30 = (trackdata_filtered['HR_filtered'] < 30).sum()
-                        seconds_below_60 = (trackdata_filtered['HR_filtered'] < 60).sum()
-                        seconds_above_100 = (trackdata_filtered['HR_filtered'] > 100).sum()
+                    total_seconds = len(trackdata_filtered)
+                    seconds_below_30 = (trackdata_filtered['HR_filtered'] < 30).sum()
+                    seconds_below_60 = (trackdata_filtered['HR_filtered'] < 60).sum()
+                    seconds_above_100 = (trackdata_filtered['HR_filtered'] > 100).sum()
 
-                        if total_seconds > 0:
-                            percent_below_30 = (seconds_below_30 / total_seconds) * 100
-                            percent_below_60 = (seconds_below_60 / total_seconds) * 100
-                            percent_above_100 = (seconds_above_100 / total_seconds) * 100
-                        else:
-                            percent_below_30 = percent_below_60 = percent_above_100 = "No Data"
-
+                    if total_seconds > 0:
+                        percent_below_30 = (seconds_below_30 / total_seconds) * 100
+                        percent_below_60 = (seconds_below_60 / total_seconds) * 100
+                        percent_above_100 = (seconds_above_100 / total_seconds) * 100
                         mean_full = trackdata_filtered['HR_filtered'].mean()
+                    else:
+                        percent_below_30 = percent_below_60 = percent_above_100 = "No Data"
+                        mean_full = "No Data"
 
-                        start_15min = max(opstart, opend - 900)
-                        last_15min_data = trackdata_filtered[
-                            (trackdata_filtered['Time'] >= start_15min) &
-                            (trackdata_filtered['Time'] <= opend)
-                        ].copy()  # to avoid SettingWithCopyWarning
+                    start_15min = max(opstart, opend - 900)
+                    last_15min_data = trackdata_filtered[
+                        (trackdata_filtered['Time'] >= start_15min) &
+                        (trackdata_filtered['Time'] <= opend)
+                    ].copy()
 
+                    HR_w15min = HR_w15minMV = "No Data"
+
+                    if not last_15min_data.empty:
                         last_15min_data['HR_filtered'] = last_15min_data['HR_filtered'].rolling(
                             window=9, center=True, min_periods=1).median()
-                        mean_15min = last_15min_data['HR_filtered'].mean()
 
-                        results_local.append({
-                            'caseid': caseid,
-                            'HR_n30': percent_below_30,
-                            'HR_n60': percent_below_60,
-                            'HR_n100': percent_above_100,
-                            'HR_total': mean_full,
-                            'HR_w15min': mean_15min
-                        })
+                        # Calculate mean regardless of completeness
+                        HR_w15minMV = last_15min_data['HR_filtered'].mean()
 
-                        print(f'→ CaseID {caseid}: HR<30: {percent_below_30:.2f}%, HR<60: {percent_below_60:.2f}%, HR>100: {percent_above_100:.2f}%')
-                        print(f'→ AvgHR (full): {mean_full:.2f}, AvgHR (last 15 min): {mean_15min:.2f}')
-                    else:
-                        print(f'Skipping CaseID {caseid} due to poor signal quality or missing HR data.')
+                        # Determine how much data is missing
+                        duration = opend - start_15min
+                        expected_points = int(duration)  # assuming 1 Hz frequency
+                        actual_points = len(last_15min_data)
+                        percent_present = (actual_points / expected_points) * 100 if expected_points > 0 else 0
+
+                        if percent_present >= 75:
+                            HR_w15min = HR_w15minMV
+
+                    results_local.append({
+                        'caseid': caseid,
+                        'HR_n30': percent_below_30,
+                        'HR_n60': percent_below_60,
+                        'HR_n100': percent_above_100,
+                        'HR_total': mean_full,
+                        'HR_w15min': HR_w15min,
+                        'HR_w15minMV': HR_w15minMV
+                    })
+
+                    print(f'→ CaseID {caseid}: HR<30: {percent_below_30:.2f}%, HR<60: {percent_below_60:.2f}%, HR>100: {percent_above_100:.2f}%')
+                    print(f'→ AvgHR (full): {mean_full}, AvgHR (last 15 min): {HR_w15min}, MV version: {HR_w15minMV}')
+                else:
+                    print(f'Skipping CaseID {caseid} due to missing case info.')
             else:
                 print(f'Failed to retrieve data for CaseID {caseid}')
-    
+
     return results_local
 
 
@@ -112,7 +121,7 @@ def parallel_for_loop(df, num_workers=None):
 
 if __name__ == "__main__":
     all_results = parallel_for_loop(df_tracklist)
-    
+
     output_dir = "Preprocessing/Data/NewData"
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, "Data_HR.csv")
