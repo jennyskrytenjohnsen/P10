@@ -67,19 +67,41 @@ def worker(subset):
                             if pct_total > 75:
                                 avg_total = trackdata_filtered['PEEP_filtered'].mean()
 
+                            # # Last 15 minutes of the operation
+                            # opend_time = trackdata_filtered['Time'].max()
+                            # last_15min_start = opend_time - 15 * 60 * 1000  # Assuming time in milliseconds
+                            # last_15min_data = trackdata_filtered[trackdata_filtered['Time'] >= last_15min_start].copy()
+
+                            # if pct_15min > 75 and not last_15min_data.empty:
+                            #     avg_15min = last_15min_data['PEEP_filtered'].mean()
+
+                            # local_results.append({
+                            #     'caseid': caseid,
+                            #     'PEEP_total': avg_total,
+                            #     'PEEP_w15min': avg_15min
+                            # })
+
                             # Last 15 minutes of the operation
                             opend_time = trackdata_filtered['Time'].max()
                             last_15min_start = opend_time - 15 * 60 * 1000  # Assuming time in milliseconds
                             last_15min_data = trackdata_filtered[trackdata_filtered['Time'] >= last_15min_start].copy()
 
-                            if pct_15min > 75 and not last_15min_data.empty:
-                                avg_15min = last_15min_data['PEEP_filtered'].mean()
+                            avg_15min = None
+                            avg_15min_mv = None
+
+                            if not last_15min_data.empty:
+                                avg_15min_mv = last_15min_data['PEEP_filtered'].mean()  # Always save this if any data is present
+
+                                if pct_15min > 75:
+                                    avg_15min = avg_15min_mv  # Only save in PEEP_w15min if quality is sufficient
 
                             local_results.append({
                                 'caseid': caseid,
                                 'PEEP_total': avg_total,
-                                'PEEP_w15min': avg_15min
+                                'PEEP_w15min': avg_15min,
+                                'PEEP_w15minMV': avg_15min_mv
                             })
+
                         else:
                             print(f"No signal quality data for CaseID {caseid}")
                     else:
