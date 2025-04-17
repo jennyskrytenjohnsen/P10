@@ -78,12 +78,19 @@ def worker(subset):
                         mean_FiO2_15min = trackdata_last[target_track].mean()
                     else:
                         mean_FiO2_15min = np.nan
+                    
+                    # Ensure FiO2_w15minMV is always recorded
+                    if not trackdata_last.empty:
+                        FiO2_w15minMV = trackdata_last[target_track].tolist()
+                    else:
+                        FiO2_w15minMV = np.nan
 
                     print(f'CaseID {caseid} - Mean FiO2 Total: {mean_FiO2_total}, Last 15min: {mean_FiO2_15min}')
                     local_results.append({
                         'caseid': caseid,
-                        'data_FiO2_total': mean_FiO2_total,
-                        'data_FiO2_15min': mean_FiO2_15min
+                        'FiO2_total': mean_FiO2_total, 
+                        'FiO2_15min': mean_FiO2_15min, 
+                        'FiO2_w15minMV': FiO2_w15minMV
                     })
                 else:
                     print(f'No clinical info for CaseID {caseid}')
