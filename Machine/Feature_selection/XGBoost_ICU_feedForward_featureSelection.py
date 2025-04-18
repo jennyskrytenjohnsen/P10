@@ -45,11 +45,6 @@ X_test = df_data_features[test_mask].drop(columns=["caseid"])
 y_train = y[train_mask]
 y_test = y[test_mask]
 
-print("Train set ICU label distribution:")
-print(y_train.value_counts(normalize=True))
-print("\nTest set ICU label distribution:")
-print(y_test.value_counts(normalize=True))
-
 # Feedforward Feature Selection Setup
 all_features = X_train.columns.tolist()
 selected_features = []
