@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from xgboost import XGBClassifier
-from sklearn.feature_selection import RFE
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
     f1_score, roc_auc_score, average_precision_score
 )
+
 # Load csv file with features 
 df_data_features = pd.read_csv("df_extracted_features.csv")
 
@@ -43,7 +43,7 @@ X_test = X[test_mask]
 y_train = y[train_mask]
 y_test = y[test_mask]
 
-# Recursive Feature Elimination (RFE) Setup
+# Train initial model to get feature importances
 model = XGBClassifier(
     n_estimators=200,
     max_depth=4,
@@ -56,25 +56,50 @@ model = XGBClassifier(
     random_state=42
 )
 
-# Choose number of features to select (ex. 20 best features)
+model.fit(X_train, y_train)
+
+# Get feature importances
+feature_importances = model.feature_importances_
+feature_importance_df = pd.DataFrame({
+    'feature': X_train.columns,
+    'importance': feature_importances
+}).sort_values(by='importance', ascending=False)
+
+print("\nTop features based on XGBoost feature importance:")
+print(feature_importance_df.head(20))
+
+# Plot Feature Importance
+plt.figure(figsize=(10, 6))
+plt.barh(feature_importance_df['feature'].head(20), feature_importance_df['importance'].head(20))
+plt.gca().invert_yaxis()
+plt.xlabel('Feature Importance')
+plt.title('Top 20 Features by XGBoost Importance')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Select top N features
 n_features_to_select = 20
-
-# Removing the least imprartant features step by step, repeat the process until the desired number of features is reached
-rfe = RFE(estimator=model, n_features_to_select=n_features_to_select, step=1)
-rfe.fit(X_train, y_train)
-
-# Selected features
-selected_features = X_train.columns[rfe.support_].tolist()
-print("\nSelected features with RFE:")
-print(selected_features)
+selected_features = feature_importance_df.head(n_features_to_select)['feature'].tolist()
 
 # Evaluate model with selected features
-model.fit(X_train[selected_features], y_train)
-y_pred = model.predict(X_test[selected_features])
-y_prob = model.predict_proba(X_test[selected_features])[:, 1]
+model_selected = XGBClassifier(
+    n_estimators=200,
+    max_depth=4,
+    learning_rate=0.05,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    gamma=1,
+    min_child_weight=1,
+    eval_metric='logloss',
+    random_state=42
+)
 
-# Performance matrice for the final model 
-print("\nPerformance Metrics with RFE-selected features:")
+model_selected.fit(X_train[selected_features], y_train)
+y_pred = model_selected.predict(X_test[selected_features])
+y_prob = model_selected.predict_proba(X_test[selected_features])[:, 1]
+
+print("\nPerformance Metrics with XGBoost feature importance-selected features:")
 print(f"Accuracy: {accuracy_score(y_test, y_pred):.3f}")
 print(f"Precision: {precision_score(y_test, y_pred):.3f}")
 print(f"Recall: {recall_score(y_test, y_pred):.3f}")
@@ -90,7 +115,7 @@ plt.figure()
 plt.plot(recall, precision, marker='.')
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('Precision-Recall Curve (RFE)')
+plt.title('Precision-Recall Curve (XGBoost Feature Importance)')
 plt.grid()
 plt.tight_layout()
 plt.show()
