@@ -9,9 +9,10 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
     f1_score, roc_auc_score, roc_curve, confusion_matrix
 )
+from sklearn.metrics import precision_recall_curve, average_precision_score
 
 # Load csv file with features 
-df_data_features = pd.read_csv("df_so_far_extracted_features.csv")
+df_data_features = pd.read_csv("df_extracted_features.csv")
 # print(df_data_features.head())
 
 # Load csv file with labels
@@ -55,14 +56,14 @@ y_test = y[test_mask]
 # - eval_metric='logloss' is a common choice for binary classification
 pipeline = Pipeline([
     ('model', XGBClassifier(
-        n_estimators=300,
+        n_estimators=300, #number of trees
         max_depth=4,
         learning_rate=0.05,
         subsample=0.8,
         colsample_bytree=0.8,
         gamma=1,
-        min_child_weight=5,
-        eval_metric='logloss',
+        min_child_weight=1,
+        eval_metric='logloss', # minimize log loss on the training set
         random_state=42
     ))
 ])
@@ -73,6 +74,10 @@ pipeline.fit(X_train, y_train)
 # Predict on test set
 y_pred = pipeline.predict(X_test)
 y_prob = pipeline.predict_proba(X_test)[:, 1]  # probability for positive class
+
+# Calculate precision-recall curve
+precision, recall, _ = precision_recall_curve(y_test, y_prob)
+avg_precision = average_precision_score(y_test, y_prob)
 
 #check stratification in test and train 
 print("Train set ICU label distribution:")
@@ -89,19 +94,22 @@ print(f"Precision: {precision_score(y_test, y_pred):.3f}")
 print(f"Recall:    {recall_score(y_test, y_pred):.3f}")
 print(f"F1 Score:  {f1_score(y_test, y_pred):.3f}")
 print(f"ROC AUC:   {roc_auc_score(y_test, y_prob):.3f}")
+print(f"Average Precision (PR AUC): {avg_precision:.3f}")
 
 # Confusion matrix
 print("\n Confusion Matrix:")
 print(confusion_matrix(y_test, y_pred))
 
-# Plot ROC curve
-fpr, tpr, _ = roc_curve(y_test, y_prob)
+print(X_train.isnull().sum().sum(), "missing values in training data")
+print(X_test.isnull().sum().sum(), "missing values in test data")
+
+
+# Plot Precision-Recall curve
 plt.figure()
-plt.plot(fpr, tpr, label=f'ROC AUC = {roc_auc_score(y_test, y_prob):.3f}')
-plt.plot([0, 1], [0, 1], '--', color='gray')
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('ROC Curve')
+plt.plot(recall, precision, label=f'Avg Precision = {avg_precision:.3f}')
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('Precision-Recall Curve')
 plt.legend()
 plt.grid()
 plt.tight_layout()
