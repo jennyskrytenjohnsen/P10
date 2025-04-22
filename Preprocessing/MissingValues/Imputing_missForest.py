@@ -44,12 +44,12 @@ y_test = y[test_mask]
 # Imputer with ExtraTrees (faster MissForest) uses other features to predict missing values
 missforest_imputer = IterativeImputer(
     estimator=ExtraTreesRegressor(
-        n_estimators=10,
+        n_estimators=50,
         max_features='sqrt',
         random_state=42,
         n_jobs=-1 # Use all available cores
     ),
-    max_iter=1,
+    max_iter=2,
     random_state=42
 )
 
