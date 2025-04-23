@@ -24,6 +24,7 @@ results = []
 for index, row in df_tracklist.iterrows():
     if row['tname'] in body_temperature:  # Check if track name is in our target list
         hypothermia=0
+        hyperthermia = 0
         trackid = row['tid']  # Track ID
         caseid = row['caseid']  # Case ID
         print(f'Processing CaseID: {caseid}, TrackName: {row["tname"]}')
@@ -61,15 +62,20 @@ for index, row in df_tracklist.iterrows():
                     for value in median_filtered['Solar8000/BT']:
                         if value < 36:
                             hypothermia  = hypothermia+1
+                        if value > 38: 
+                            hyperthermia = hyperthermia+1
+
                     precentage_hypothermia = (hypothermia/len(trackdata_filtered))*100
-                    print("precentage_hypothermia", precentage_hypothermia)    
+                    print("precentage_hypothermia", precentage_hypothermia)
+                    precentage_hyperthermia = (hyperthermia/len(trackdata_filtered))*100
+                    print("precentage_hyperthermia", precentage_hyperthermia)
                     
                     average_first_15_min = median_filtered['Solar8000/BT'][:900].mean()
                     average_last_15_min = median_filtered['Solar8000/BT'][-900:].mean()
                     difference_BT = average_first_15_min-average_last_15_min
                     print("difference_BT", difference_BT)
 
-                    results.append([mean_BT,precentage_hypothermia, difference_BT])
+                    results.append([mean_BT,precentage_hypothermia, precentage_hyperthermia ,difference_BT])
 
                 else:
                     mean_val = "No Data"
@@ -79,7 +85,7 @@ for index, row in df_tracklist.iterrows():
 # Create DataFrame and save to CSV
 output_dir = "Preprocessing/Data"
 os.makedirs(output_dir, exist_ok=True)
-output_path = os.path.join(output_dir, "Data_BT.csv")
+output_path = os.path.join(output_dir, "Data_BT_with_hyperthermia.csv")
 df_results = pd.DataFrame(results)
 df_results.to_csv(output_path, index=False)
 
