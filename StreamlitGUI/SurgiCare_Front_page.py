@@ -1,3 +1,4 @@
+# streamlit run c:/Users/mariah/Documents/GitHub/P10/StreamlitGUI/SurgiCare_Front_page.py
 import streamlit as st
 
 # Set up the page

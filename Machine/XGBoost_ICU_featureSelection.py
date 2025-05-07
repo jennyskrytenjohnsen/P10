@@ -1,78 +1,129 @@
-import pandas as pd
+import pandas as pd 
 import numpy as np
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, log_loss
+import matplotlib.pyplot as plt
 
 # Load csv file with features 
 df_data_features = pd.read_csv("df_so_far_extracted_features.csv")
-
-# Load csv file with labels
 df_data_labels = pd.read_csv("For_machinelearning/number_of_days_in_ICU.csv")
 
-# Extract case IDs for group splitting
-case_ids = df_data_features["caseid"].unique()
+# Merge features and labels on 'caseid'
+df_merged = df_data_features.merge(df_data_labels, on="caseid")
+
+# Remove 'icu_days' if present
+df_merged = df_merged.drop(columns=['icu_days'], errors='ignore')
 
 # Extract features and labels
-X = df_data_features
-y = df_data_labels["icu_days_binary"]
+X = df_merged.drop(columns=["icu_days_binary"])
+y = df_merged["icu_days_binary"]
+
+# Extract case IDs for group splitting
+case_ids = X["caseid"].unique()
 
 # Split the unique case IDs into train and test sets
 train_ids, test_ids = train_test_split(case_ids, test_size=0.2, random_state=42)
 
 # Create boolean masks to filter rows by case ID
-#To ensure that no patient (caseid) is in both train and test sets 
-train_mask = df_data_features["caseid"].isin(train_ids)
-test_mask = df_data_features["caseid"].isin(test_ids)
+train_mask = X["caseid"].isin(train_ids)
+test_mask = X["caseid"].isin(test_ids)
 
 # Apply masks to select features and targets
-X_train = df_data_features[train_mask].drop(columns=["caseid"])
-X_test = df_data_features[test_mask].drop(columns=["caseid"])
+X_train = X[train_mask].drop(columns=["caseid"])
+X_test = X[test_mask].drop(columns=["caseid"])
 y_train = y[train_mask]
 y_test = y[test_mask]
 
-# Feedforward selection
-selected_features = []
-remaining_features = list(X_train.columns)
-best_score = 0
-#the feature selection process depends on the performance matric of roc_auc_score
-while remaining_features:
+# Check stratification
+def check_stratification(name, labels):
+    ratio = labels.mean()
+    print(f"{name} positive class ratio (icu_days_binary == 1): {ratio:.4f} ({labels.sum()}/{len(labels)})")
+
+check_stratification("Full dataset", y)
+check_stratification("Training set", y_train)
+check_stratification("Test set", y_test)
+
+# Prepare lists to store the results
+probabilities_history = []
+
+# Initialize the model
+model = XGBClassifier(
+    n_estimators=300,
+    max_depth=4,
+    learning_rate=0.05,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    gamma=1,
+    min_child_weight=5,
+    eval_metric='logloss',
+    random_state=42
+)
+
+# Initial model
+model.fit(X_train, y_train)
+y_prob = model.predict_proba(X_test)[:, 1]
+
+# Save initial AUC and log-loss
+initial_auc = roc_auc_score(y_test, y_prob)
+initial_log_loss = log_loss(y_test, y_prob)
+
+probabilities_history.append({
+    "Iteration": 0,
+    "AUC": initial_auc,
+    "Log_Loss": initial_log_loss,
+    "Predicted_Probabilities": y_prob
+})
+
+# Backward elimination loop
+iteration = 0
+selected_features = list(X_train.columns)
+
+while len(selected_features) > 1:
+    iteration += 1
+    print(f"\nIteration {iteration}: {len(selected_features)} features remaining...")
+
     scores = []
-    for feature in remaining_features:
-        trial_features = selected_features + [feature]
-        model = XGBClassifier(
-            n_estimators=300,
-            max_depth=4,
-            learning_rate=0.05,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            gamma=1,
-            min_child_weight=5,
-            eval_metric='logloss',
-            random_state=42
-        )
+    for feature in selected_features:
+        trial_features = [f for f in selected_features if f != feature]
         model.fit(X_train[trial_features], y_train)
         y_prob = model.predict_proba(X_test[trial_features])[:, 1]
-        score = roc_auc_score(y_test, y_prob) 
-        scores.append((score, feature))
-    
-    scores.sort(reverse=True)  # higher AUC is better
-    best_new_score, best_new_feature = scores[0]
+        
+        # Calculate AUC and log-loss
+        auc_score = roc_auc_score(y_test, y_prob)
+        log_loss_score = log_loss(y_test, y_prob)
+        
+        scores.append((auc_score, log_loss_score, feature))
 
-    if best_new_score > best_score:
-        selected_features.append(best_new_feature)
-        remaining_features.remove(best_new_feature)
-        best_score = best_new_score
-        print(f" Added: {best_new_feature} | AUC: {best_new_score:.3f}")
+    # Sort and choose the best feature to remove
+    scores.sort(reverse=True)
+    best_auc_score, best_log_loss_score, feature_to_remove = scores[0]
+
+    if best_auc_score >= probabilities_history[-1]["AUC"]:
+        selected_features.remove(feature_to_remove)
+        probabilities_history.append({
+            "Iteration": iteration,
+            "AUC": best_auc_score,
+            "Log_Loss": best_log_loss_score,
+            "Predicted_Probabilities": y_prob
+        })
+        print(f" ➤ Removed: {feature_to_remove} | AUC: {best_auc_score:.3f}")
     else:
-        print(" No improvement — stopping.")
+        print(" ✖ No improvement — stopping.")
         break
 
-# Final selected features
-print("\n Final selected features:")
-print(selected_features)
+# Save results to CSV files
+probabilities_df = pd.DataFrame(probabilities_history)
 
-# Features that were not selected
-not_selected_features = [f for f in X_train.columns if f not in selected_features]
-print("\n Features not selected:")
-print(not_selected_features)
+# Save the probabilities and evaluation results (AUC and Log-Loss)
+probabilities_df.to_csv("Machine/model_probabilities_results.csv", index=False)
+
+print("\nFinal model evaluation:")
+# Evaluate final model
+model.fit(X_train[selected_features], y_train)
+y_prob = model.predict_proba(X_test[selected_features])[:, 1]
+final_auc = roc_auc_score(y_test, y_prob)
+final_log_loss = log_loss(y_test, y_prob)
+
+print(f"Final AUC: {final_auc:.3f}")
+print(f"Final Log-Loss: {final_log_loss:.3f}")
