@@ -5,9 +5,9 @@ st.set_page_config(page_title="Prediction", page_icon="🩺")
 
 # Main content (completely empty screen to start with)
 st.markdown("# Risk of ICU Admission")
-
+ 
 # Display the selected patient's name
-st.markdown(f"Selected: {st.session_state.patient_option}")
+st.markdown(f"## Selected: {st.session_state.patient_option}")
 
 # Creating a fully colored red circle
 fig, ax = plt.subplots(figsize=(2, 2))
