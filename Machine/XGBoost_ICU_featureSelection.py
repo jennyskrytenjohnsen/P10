@@ -35,6 +35,15 @@ X_test = X[test_mask].drop(columns=["caseid"])
 y_train = y[train_mask]
 y_test = y[test_mask]
 
+# Check stratification
+def check_stratification(name, labels):
+    ratio = labels.mean()
+    print(f"{name} positive class ratio (icu_days_binary == 1): {ratio:.4f} ({labels.sum()}/{len(labels)})")
+
+check_stratification("Full dataset", y)
+check_stratification("Training set", y_train)
+check_stratification("Test set", y_test)
+
 # Prepare lists to store the results
 probabilities_history = []
 
