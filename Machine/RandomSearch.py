@@ -4,6 +4,7 @@ import pandas as pd
 import os
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 from sklearn.metrics import log_loss
+import joblib
 
 # Ensure 'Machine' folder exists
 os.makedirs('Machine', exist_ok=True)
@@ -74,7 +75,8 @@ random_search = RandomizedSearchCV(
     cv=5,
     verbose=2,
     random_state=42,
-    n_jobs=-1
+    n_jobs=-1,
+    scoring='neg_brier_score'
 )
 
 # Fit to training data
@@ -85,7 +87,7 @@ results = []
 
 for i in range(random_search.n_iter):
     params = random_search.cv_results_['params'][i]
-    mean_test_score = random_search.cv_results_['mean_test_score'][i]
+    neg_brier_score = random_search.cv_results_['neg_brier_score'][i]
 
     model = xgb.XGBClassifier(
         objective="binary:logistic",
@@ -99,7 +101,7 @@ for i in range(random_search.n_iter):
     y_pred_proba = model.predict_proba(X_test)
     logloss = log_loss(y_test, y_pred_proba)
 
-    results.append({**params, 'log_loss': logloss, 'mean_test_score': mean_test_score})
+    results.append({**params, 'log_loss': logloss, 'neg_brier_score': neg_brier_score})
 
 # Save results
 results_df = pd.DataFrame(results)
@@ -107,3 +109,12 @@ results_df.to_csv('Machine/xgboost_random_search_results.csv', index=False)
 
 # Print preview
 print(results_df.head())
+
+# Get best model from RandomizedSearchCV
+best_model = random_search.best_estimator_
+
+# Save the best model to disk
+model_path = 'Machine/best_xgboost_model.joblib'
+joblib.dump(best_model, model_path)
+
+print(f"Best model saved to {model_path}")
