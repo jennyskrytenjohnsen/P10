@@ -10,7 +10,7 @@ import joblib
 os.makedirs('Machine', exist_ok=True)
 
 # Load features and labels
-df_data_features = pd.read_csv("df_so_far_extracted_features.csv")
+df_data_features = pd.read_csv("TestTrainingSet/train_ids_pre&peri.csv")
 df_data_labels = pd.read_csv("For_machinelearning/number_of_days_in_ICU.csv")
 
 # Merge on 'caseid'
@@ -87,7 +87,7 @@ results = []
 
 for i in range(random_search.n_iter):
     params = random_search.cv_results_['params'][i]
-    neg_brier_score = random_search.cv_results_['neg_brier_score'][i]
+    neg_brier_score = random_search.cv_results_['mean_test_score'][i]
 
     model = xgb.XGBClassifier(
         objective="binary:logistic",

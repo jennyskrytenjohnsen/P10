@@ -21,6 +21,23 @@ norm = plt.Normalize(0, 100)
 cb1 = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation='horizontal')
 st.pyplot(fig)
 
+# ----------------- MOST IMPORTANT VARIABLES -----------------
+st.markdown("#### Summary of Most Important Variables for Prediction")
+imp_vars = ["age", "sex", "height", "weight", "BMI"]
+imp_importance = [80, 65, 50, 70, 90]
+df_imp = pd.DataFrame({"Important Variables": imp_vars})
+importance_imp = pd.Series(imp_importance, index=df_imp.index)
+
+def colorize_imp(val):
+    idx = df_imp[df_imp["Important Variables"] == val].index[0]
+    score = importance_imp[idx] / 100
+    color = sns.color_palette("coolwarm", as_cmap=True)(score)
+    return f'background-color: rgba({int(color[0]*255)}, {int(color[1]*255)}, {int(color[2]*255)}, 0.7)'
+
+styled_imp = df_imp.style.applymap(colorize_imp).hide(axis="index")
+st.write(styled_imp)
+
+
 # Create two columns: left for content, right for patient name
 col1, col2 = st.columns([1, 1])  # Adjust width ratio as needed
 
@@ -102,14 +119,12 @@ with col2:
     # ----------------- OTHER VARIABLES -----------------
     st.markdown("#### Other Variables")
     data_dict_var_others = {
-        "Others": ["preop_dm", "preop_htn", "asa", "cancer", ""],
-        "Anesthesia": ["generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"],
-        "Surgical category": ["General surgery", "Thoracic surgery", "Urology", "Gynecology", ""]
+        "Others": ["preop_dm", "preop_htn", "asa", "cancer", "", "", "", "", ""],
+        "Surgical": ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
     }
     data_dict_importance_others = {
-        "Others": [60, 65, 50, 70, 50],
-        "Anesthesia": [70, 75, 80, 10, 20],
-        "Surgical category": [0, 0, 0, 5, 50]
+        "Others": [60, 65, 50, 70, 50, 50, 50, 50, 50],
+        "Surgical": [0, 0, 0, 5, 50, 70, 30, 50, 20]
     }
     df_others = pd.DataFrame.from_dict(data_dict_var_others)
     importance_df_others = pd.DataFrame.from_dict(data_dict_importance_others)
