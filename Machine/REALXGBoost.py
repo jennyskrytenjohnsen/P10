@@ -10,6 +10,10 @@ from sklearn.metrics import (
     f1_score
 )
 import matplotlib.pyplot as plt
+import os
+
+# Ensure Machine folder exists
+os.makedirs("Machine", exist_ok=True)
 
 # Load test features and labels
 df_data_features = pd.read_csv("TestTrainingSet/test_ids_pre&peri.csv")
@@ -24,6 +28,9 @@ df_merged = df_merged.drop(columns=['icu_days'], errors='ignore')
 # Define features (X) and labels (y)
 X = df_merged.drop(columns=["icu_days_binary"])
 y = df_merged["icu_days_binary"]
+
+# Save case IDs if present
+case_ids = X["caseid"] if "caseid" in X.columns else None
 
 # Drop 'caseid' if present
 if 'caseid' in X.columns:
@@ -64,3 +71,13 @@ plt.legend(loc="lower right")
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+
+# Save predicted probabilities to CSV
+preds_df = pd.DataFrame({
+    "caseid": case_ids if case_ids is not None else range(len(y)),
+    "true_label": y,
+    "predicted_probability": y_pred_proba,
+    "predicted_label": y_pred
+})
+preds_df.to_csv("Machine/test_predictions.csv", index=False)
+print("Predictions saved to Machine/test_predictions.csv")
