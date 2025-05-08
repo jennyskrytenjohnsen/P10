@@ -9,7 +9,7 @@ from sklearn.metrics import log_loss
 os.makedirs('Machine', exist_ok=True)
 
 # Load features and labels
-df_data_features = pd.read_csv('df_extracted_features_pre.csv')
+df_data_features = pd.read_csv('df_extracted_features_pre&peri.csv')
 df_data_labels = pd.read_csv('C:/Users/johns/Documents/10semester/P10/For_machinelearning/number_of_days_in_ICU.csv')
 
 # Merge on 'caseid'
@@ -43,5 +43,5 @@ training_file = df_data_features.merge(train_ids, on="caseid")
 print(len(training_file.columns))
 test_file = df_data_features.merge(test_ids,on= "caseid" )
 
-#training_file.to_csv('train_ids_pre.csv', index=False)
-#test_file.to_csv('test_ids_pre.csv', index=False)
+#training_file.to_csv('train_ids_pre&peri.csv', index=False)
+#test_file.to_csv('test_ids_pre&peri.csv', index=False)

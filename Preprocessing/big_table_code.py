@@ -29,14 +29,9 @@ df_features_from_clinical_data = df_clinical[['caseid','age','sex', 'height', 'w
 with pd.option_context('future.no_silent_downcasting', True):
    df_features_from_clinical_data.loc[:,'sex'] = df_features_from_clinical_data['sex'].replace({'M': 1, 'F': 0})
 
-   
 
-indexAge = df_features_from_clinical_data[df_features_from_clinical_data['age'] < 18].index
-df_features_from_clinical_data.drop(indexAge, inplace = True)
 
-# Delete all rows with column 'Age' has value 20 to 25 
-#indexAge = df[ (df['Age'] >= 20) & (df['Age'] <= 25) ].index
-#df.drop(indexAge , inplace=True)
+
 
 ###################################################################################################################
 path = "C:/Users/johns/Documents/10semester/P10/Preprocessing/Data" #This is the path where the datafiles is saved on you coumputer
@@ -58,7 +53,19 @@ features_from_datafolder  = pd.concat(li, axis=1) #mergin every csvfile, the axi
 frames = [df_features_from_clinical_data, features_from_datafolder] #merges the manualy extracted features form the df_clinical  & the csv files
 df_so_far_extracted_features = pd.concat(frames, axis=1) #merges the manualy extracted features form the df_clinical  & the csv files
 
+
+
+with pd.option_context('future.no_silent_downcasting', True):
+   indexAge = df_so_far_extracted_features[df_so_far_extracted_features['age'] < 18].index
+   print('Under18', len(indexAge))
+   df_so_far_extracted_features.drop(indexAge, inplace = True)
+
+
+print("Unique values:", df_so_far_extracted_features['caseid'].nunique(), "Length of dataset:", len(df_so_far_extracted_features))
 df_so_far_extracted_features.replace('No Data', np.nan ,inplace=True)
+
+
+
 
 #def calculations_one_on_the_dataset():
 
@@ -85,11 +92,12 @@ df_so_far_extracted_features_filtered = df_so_far_extracted_features[not_nan_val
 
  # WORKING ON REMOVING ROWS = CASEIDS WITH LESS THAN 75% DATA
 not_nan_values_per_caseid = df_so_far_extracted_features_filtered.notna().sum(axis=1) #How many not nan values are there for each caseid
+
 not_nan_values_for_caseid_precentage = round((not_nan_values_per_caseid/len(df_so_far_extracted_features_filtered.columns))*100) #Calculate precentage
 #print('Each feature not nan values in precentage for caseid\n', not_nan_values_for_caseid_precentage) 
 
 over75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage >=75] # how many caseids have over 75% data
-under75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage < 75] # phow many caseids have under 75% data
+under75precentage = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage < 75] # how many caseids have under 75% data
 
 print('Over 75 precentage for caseid:', len(over75precentage), 'Under 75 precentage for caseid:', len(under75precentage))
 
@@ -97,7 +105,11 @@ print('Over 75 precentage for caseid:', len(over75precentage), 'Under 75 precent
 not_nan_values_for_caseid_precentage_filtered_over = not_nan_values_for_caseid_precentage[not_nan_values_for_caseid_precentage >= 75]
 
 #Extracting only the caseIDs with more that 75% data precent
-df_extracted_features_preandperi = df_so_far_extracted_features_filtered.iloc[not_nan_values_for_caseid_precentage_filtered_over.index]
+df_extracted_features_preandperi = df_so_far_extracted_features_filtered.loc[not_nan_values_for_caseid_precentage_filtered_over.index]
+df_extracted_features_preandperi = df_extracted_features_preandperi.sort_values(by="caseid")
+
+print("Unique values:", df_extracted_features_preandperi['caseid'].nunique(), "Length of dataset:", len(df_extracted_features_preandperi))
+
 
 #df_extracted_features_preandperi.to_csv('df_extracted_features_pre&peri.csv', index=False)
 
@@ -112,6 +124,8 @@ features = [
 
 
 df_only_pre = df_extracted_features_preandperi.drop(features, axis='columns')
+
+print("Unique values:", df_only_pre['caseid'].nunique(), "Length of dataset:", len(df_only_pre))
 
 
 #df_only_pre.to_csv('df_extracted_features_pre.csv', index=False)
