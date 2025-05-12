@@ -17,7 +17,7 @@ import os
 os.makedirs("Machine", exist_ok=True)
 
 # Load test features and labels
-df_data_features = pd.read_csv("TestTrainingSet/test_ids_pre&peri.csv")
+df_data_features = pd.read_csv("TestTrainingSet/test_ids_pre.csv")
 df_data_labels = pd.read_csv("For_machinelearning/number_of_days_in_ICU.csv")
 
 # Merge on 'caseid'
@@ -38,7 +38,7 @@ if 'caseid' in X.columns:
     X = X.drop(columns=['caseid'])
 
 # Load the saved model
-model = joblib.load('Machine/best_xgboost_model.joblib')
+model = joblib.load('Machine/best_xgboost_model_pre.joblib')
 
 # Predict probabilities and class labels
 y_pred_proba = model.predict_proba(X)[:, 1]
@@ -73,39 +73,39 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
-# Calculate SHAP values
-explainer = shap.TreeExplainer(model)
-shap_values = explainer.shap_values(X)
+# # Calculate SHAP values
+# explainer = shap.TreeExplainer(model)
+# shap_values = explainer.shap_values(X)
 
-# Check if shap_values is a list (it usually is for binary classification)
-if isinstance(shap_values, list):
-    shap_values_positive_class = shap_values[1]  # Class 1
-else:
-    shap_values_positive_class = shap_values  # Might happen in multiclass or other setups
+# # Check if shap_values is a list (it usually is for binary classification)
+# if isinstance(shap_values, list):
+#     shap_values_positive_class = shap_values[1]  # Class 1
+# else:
+#     shap_values_positive_class = shap_values  # Might happen in multiclass or other setups
 
-# DEBUG: Print the shape of SHAP values and X
-print(f"SHAP shape: {shap_values_positive_class.shape}, X shape: {X.shape}")
+# # DEBUG: Print the shape of SHAP values and X
+# print(f"SHAP shape: {shap_values_positive_class.shape}, X shape: {X.shape}")
 
-# Validate dimensions
-if shap_values_positive_class.shape == X.shape:
-    shap_values_df = pd.DataFrame(shap_values_positive_class, columns=X.columns)
+# # Validate dimensions
+# if shap_values_positive_class.shape == X.shape:
+#     shap_values_df = pd.DataFrame(shap_values_positive_class, columns=X.columns)
     
-    # Add 'caseid' if available
-    if case_ids is not None:
-        shap_values_df.insert(0, "caseid", case_ids)
+#     # Add 'caseid' if available
+#     if case_ids is not None:
+#         shap_values_df.insert(0, "caseid", case_ids)
 
-    # Save to CSV
-    shap_values_df.to_csv("Machine/shap_values.csv", index=False)
-    print("SHAP values saved to Machine/shap_values.csv")
-else:
-    raise ValueError("SHAP values shape does not match feature matrix X. Please inspect manually.")
+#     # Save to CSV
+#     shap_values_df.to_csv("Machine/shap_values.csv", index=False)
+#     print("SHAP values saved to Machine/shap_values.csv")
+# else:
+#     raise ValueError("SHAP values shape does not match feature matrix X. Please inspect manually.")
 
-# Save predicted probabilities to CSV
-preds_df = pd.DataFrame({
-    "caseid": case_ids if case_ids is not None else range(len(y)),
-    "true_label": y,
-    "predicted_probability": y_pred_proba,
-    "predicted_label": y_pred
-})
-preds_df.to_csv("Machine/test_predictions.csv", index=False)
-print("Predictions saved to Machine/test_predictions.csv")
+# # Save predicted probabilities to CSV
+# preds_df = pd.DataFrame({
+#     "caseid": case_ids if case_ids is not None else range(len(y)),
+#     "true_label": y,
+#     "predicted_probability": y_pred_proba,
+#     "predicted_label": y_pred
+# })
+# preds_df.to_csv("Machine/test_predictions.csv", index=False)
+# print("Predictions saved to Machine/test_predictions.csv")
