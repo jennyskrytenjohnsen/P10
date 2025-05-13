@@ -11,8 +11,6 @@ subjectid = df_clinical['subjectid']
 
 print(subjectid_caseid.head())
 
-
-
 #df_merged = df_data_features.merge(df_data_labels, on="caseid")
 
 new_df_for_test = train.merge(subjectid_caseid, on="caseid")
