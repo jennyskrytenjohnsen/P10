@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime  # Add this import
 
 st.set_page_config(page_title="Variables", page_icon="📊")
 
@@ -85,6 +86,10 @@ st.markdown("# Variables Affecting the Prediction")
 st.markdown(f"### Selected: {st.session_state.patient_option}")
 
 st.write("This page offers an overview of the variables affecting the prediction of ICU admission. The importance of each variable is determined by the underlying machine learning algorithm, and therefore it might not match the physiological importance.")
+
+# Display timestamp above the circle
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+st.markdown(f"**Timestamp for prediction:** {current_time}")
 
 # Add color bar legend
 st.markdown("**Importance Scale**")

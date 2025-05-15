@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime  # Add this import
 
 st.set_page_config(page_title="Variables", page_icon="📊")
 
@@ -89,7 +90,10 @@ feature_name_map = {
     "op_duration_min": "Operation duration"
 }
 
-# Format values nicely based on variable type
+# Add default SHAP value = 0 for placeholder variables
+for placeholder in [""] * 10:
+    patient_shap[placeholder] = 0
+
 def format_value(var, val):
     if pd.isna(val):
         return "N/A"
@@ -108,13 +112,17 @@ def format_value(var, val):
     else:
         return str(val)
 
-# Page title
+# Title and intro
 st.markdown("# Variables Affecting the Prediction")
 st.markdown(f"### Selected: {st.session_state.patient_option}")
 
 st.write("This page offers an overview of the variables affecting the prediction of ICU admission. The importance of each variable is determined by the underlying machine learning algorithm, and therefore it might not match the physiological importance.")
 
-# Importance colorbar legend
+# Display timestamp above the circle
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+st.markdown(f"**Timestamp for prediction:** {current_time}")
+
+# SHAP color bar
 st.markdown("**Importance Scale**")
 fig, ax = plt.subplots(figsize=(8, 0.05))
 cmap = sns.color_palette("coolwarm", as_cmap=True)
@@ -122,9 +130,9 @@ norm = plt.Normalize(-1, 1)
 plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation='horizontal')
 st.pyplot(fig)
 
-# Background color function based on SHAP importance
 def colorize(val):
-    # val looks like "Age: 40 years" so we split to get name
+    if val == "":
+        return ""
     name = val.split(":")[0].strip()
     original_name = [k for k, v in feature_name_map.items() if v == name]
     score = patient_shap.get(original_name[0], 0) if original_name else 0
@@ -132,30 +140,27 @@ def colorize(val):
     color = sns.color_palette("coolwarm", as_cmap=True)(norm_score)
     return f'background-color: rgba({int(color[0]*255)}, {int(color[1]*255)}, {int(color[2]*255)}, 0.7)'
 
-# Combine feature name and formatted value from CSV row
 def name_and_value(var):
+    if var == "":
+        return ""
     name = feature_name_map.get(var, var)
-    if var in row_values.index:
-        val_raw = row_values[var]
-        val_str = format_value(var, val_raw)
-    else:
-        val_str = "N/A"
+    val_raw = row_values.get(var, np.nan)
+    val_str = format_value(var, val_raw)
     return f"{name}: {val_str}"
 
 # ----------------- MOST IMPORTANT VARIABLES -----------------
 st.markdown("#### Summary of Most Important Variables for Prediction")
-
 top_vars = sorted(patient_shap.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
 imp_vars = [name_and_value(var) for var, _ in top_vars]
+while len(imp_vars) < 5:
+    imp_vars.append("")
 
 df_imp = pd.DataFrame({"Important Variables": imp_vars})
 styled_imp = df_imp.style.applymap(colorize).hide(axis="index")
 st.write(styled_imp)
 
-# Two columns for grouping variables
-col1, col2 = st.columns([1, 1])
-
 # ----------------- DEMOGRAPHIC VARIABLES -----------------
+col1, col2 = st.columns([1, 1])
 with col1:
     st.markdown("#### Demographic Variables")
     demo_vars = ["age", "sex", "height", "weight", "BMI"]
@@ -168,9 +173,15 @@ with col1:
     st.markdown("#### Perioperative Variables")
     resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "RR_w15min", "SpO2_total", "SpO2_w15min", "SpO2_n90", "SpO2_w15minMV", "data_vent"]
     circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"]
+
+    # Pad lists to equal length
+    max_len = max(len(resp_vars), len(circ_vars))
+    resp_vars += [""] * (max_len - len(resp_vars))
+    circ_vars += [""] * (max_len - len(circ_vars))
+
     data_peri = pd.DataFrame({
-        "Respiratory": [name_and_value(v) if v else "" for v in resp_vars],
-        "Circulatory": [name_and_value(v) if v else "" for v in circ_vars]
+        "Respiratory": [name_and_value(v) for v in resp_vars],
+        "Circulatory": [name_and_value(v) for v in circ_vars]
     })
     styled_table_peri = data_peri.style.applymap(colorize).hide(axis="index")
     st.write(styled_table_peri)
@@ -179,21 +190,31 @@ with col1:
 with col2:
     st.markdown("#### Preoperative Variables")
     circ_pre = ["prept", "preaptt", "prehb", "preplt"]
-    renal_pre = ["prek", "prena", "preca", ""]
+    renal_pre = ["prek", "prena", "preca"]
+    # Pad to same length
+    max_len = max(len(circ_pre), len(renal_pre))
+    circ_pre += [""] * (max_len - len(circ_pre))
+    renal_pre += [""] * (max_len - len(renal_pre))
+
     data_pre = pd.DataFrame({
-        "Circulatory": [name_and_value(v) if v else "" for v in circ_pre],
-        "Renal": [name_and_value(v) if v else "" for v in renal_pre]
+        "Circulatory": [name_and_value(v) for v in circ_pre],
+        "Renal": [name_and_value(v) for v in renal_pre]
     })
     styled_table_pre = data_pre.style.applymap(colorize).hide(axis="index")
     st.write(styled_table_pre)
 
     # ----------------- OTHER VARIABLES -----------------
     st.markdown("#### Other Variables")
-    other_vars = ["preop_dm", "preop_htn", "asa", "cancer", "", "", "", "", ""]
+    other_vars = ["preop_dm", "preop_htn", "asa", "cancer"]
     surg_vars = ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
+    # Pad both columns
+    max_len = max(len(other_vars), len(surg_vars))
+    other_vars += [""] * (max_len - len(other_vars))
+    surg_vars += [""] * (max_len - len(surg_vars))
+
     df_others = pd.DataFrame({
-        "Others": [name_and_value(v) if v else "" for v in other_vars],
-        "Surgical": [name_and_value(v) if v else "" for v in surg_vars]
+        "Others": [name_and_value(v) for v in other_vars],
+        "Surgical": [name_and_value(v) for v in surg_vars]
     })
     styled_others = df_others.style.applymap(colorize).hide(axis="index")
     st.write(styled_others)
