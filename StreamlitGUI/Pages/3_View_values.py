@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-from datetime import datetime  # Add this import
+from datetime import datetime
 
 st.set_page_config(page_title="Variables", page_icon="📊")
 
@@ -18,7 +18,7 @@ patient_case_map = {
 shap_df = pd.read_csv("Machine/shap_values.csv")
 
 # Load values from CSV (source of variable values to display)
-values_df = pd.read_csv(r"TestTrainingSet\test_ids_pre&peri.csv")
+values_df = pd.read_csv(r"TestTrainingSet/test_ids_pre&peri.csv")
 
 # Get current case ID
 case_id = patient_case_map.get(st.session_state.patient_option)
@@ -97,6 +97,32 @@ for placeholder in [""] * 10:
 def format_value(var, val):
     if pd.isna(val):
         return "N/A"
+    
+
+    # Binary categorical values mapping
+    binary_mappings = {
+        "sex": {0: "female", 1: "male"},
+        "data_vent": {0: "no", 1: "yes"},
+        "value_eph": {0: "no", 1: "yes"},
+        "value_phe": {0: "no", 1: "yes"},
+        "value_vaso": {0: "no", 1: "yes"},
+        "value_ino": {0: "no", 1: "yes"},
+        "has_aline": {0: "no", 1: "yes"},
+        "General surgery": {0.0: "no", 1.0: "yes"},
+        "Thoracic surgery": {0.0: "no", 1.0: "yes"},
+        "Urology": {0.0: "no", 1.0: "yes"},
+        "Gynecology": {0.0: "no", 1.0: "yes"},
+        "generalAnesthesia": {0.0: "no", 1.0: "yes"},
+        "spinalAnesthesia": {0.0: "no", 1.0: "yes"},
+        "sedationalgesia": {0.0: "no", 1.0: "yes"},
+        "preop_dm": {0: "no", 1: "yes"},
+        "preop_htn": {0: "no", 1: "yes"},
+        "cancer": {0: "no", 1: "yes"},
+    }
+
+    if var in binary_mappings:
+        return binary_mappings[var].get(val, "N/A")
+
     if var == "age":
         return f"{int(val)} years"
     elif var in ["height", "weight"]:
