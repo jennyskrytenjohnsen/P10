@@ -174,6 +174,9 @@ norm = plt.Normalize(-1, 1)
 plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation='horizontal')
 st.pyplot(fig)
 
+# Checkbox to toggle showing variable values
+show_values = st.checkbox("Show variable values", value=False)
+
 def colorize(val):
     if val == "":
         return ""
@@ -184,18 +187,21 @@ def colorize(val):
     color = sns.color_palette("coolwarm", as_cmap=True)(norm_score)
     return f'background-color: rgba({int(color[0]*255)}, {int(color[1]*255)}, {int(color[2]*255)}, 0.7)'
 
-def name_and_value(var):
+def name_and_value(var, show_val=False):
     if var == "":
         return ""
     name = feature_name_map.get(var, var)
-    # Remove the value and unit, just return the name
-    return name
-
+    if show_val:
+        val_raw = row_values.get(var, np.nan)
+        val_str = format_value(var, val_raw)
+        return f"{name}: {val_str}"
+    else:
+        return name
 
 # Top 5 variables
 st.markdown("#### Summary of Most Important Variables for Prediction")
 top_vars = sorted(patient_shap.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
-imp_vars = [name_and_value(var) for var, _ in top_vars]
+imp_vars = [name_and_value(var, show_values) for var, _ in top_vars]
 while len(imp_vars) < 5:
     imp_vars.append("")
 
@@ -204,11 +210,9 @@ styled_imp = df_imp.style.applymap(colorize).hide(axis="index")
 st.write(styled_imp)
 
 # Demographic
-col1, col2 = st.columns([1, 1])
-
 st.markdown("#### Demographic Variables")
 demo_vars = ["age", "sex", "height", "weight", "BMI"]
-demo_vals = [name_and_value(v) for v in demo_vars]
+demo_vals = [name_and_value(v, show_values) for v in demo_vars]
 df_demo = pd.DataFrame({"Demographic": demo_vals})
 styled_demo = df_demo.style.applymap(colorize).hide(axis="index")
 st.write(styled_demo)
@@ -220,12 +224,11 @@ max_len = max(len(resp_vars), len(circ_vars))
 resp_vars += [""] * (max_len - len(resp_vars))
 circ_vars += [""] * (max_len - len(circ_vars))
 data_peri = pd.DataFrame({
-    "Respiratory": [name_and_value(v) for v in resp_vars],
-    "Circulatory": [name_and_value(v) for v in circ_vars]
+    "Respiratory": [name_and_value(v, show_values) for v in resp_vars],
+    "Circulatory": [name_and_value(v, show_values) for v in circ_vars]
 })
 styled_table_peri = data_peri.style.applymap(colorize).hide(axis="index")
 st.write(styled_table_peri)
-
 
 st.markdown("#### Preoperative Variables")
 circ_pre = ["prept", "preaptt", "prehb", "preplt"]
@@ -234,8 +237,8 @@ max_len = max(len(circ_pre), len(renal_pre))
 circ_pre += [""] * (max_len - len(circ_pre))
 renal_pre += [""] * (max_len - len(renal_pre))
 data_pre = pd.DataFrame({
-    "Circulatory": [name_and_value(v) for v in circ_pre],
-    "Renal": [name_and_value(v) for v in renal_pre]
+    "Circulatory": [name_and_value(v, show_values) for v in circ_pre],
+    "Renal": [name_and_value(v, show_values) for v in renal_pre]
 })
 styled_table_pre = data_pre.style.applymap(colorize).hide(axis="index")
 st.write(styled_table_pre)
@@ -247,8 +250,8 @@ max_len = max(len(other_vars), len(surg_vars))
 other_vars += [""] * (max_len - len(other_vars))
 surg_vars += [""] * (max_len - len(surg_vars))
 df_others = pd.DataFrame({
-    "Others": [name_and_value(v) for v in other_vars],
-    "Surgical": [name_and_value(v) for v in surg_vars]
+    "Others": [name_and_value(v, show_values) for v in other_vars],
+    "Surgical": [name_and_value(v, show_values) for v in surg_vars]
 })
 styled_others = df_others.style.applymap(colorize).hide(axis="index")
 st.write(styled_others)
