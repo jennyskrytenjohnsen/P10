@@ -26,10 +26,62 @@ else:
     st.error("Patient not found or invalid case ID.")
     st.stop()
 
+# Feature name mapping
+feature_name_map = {
+    "age": "age",
+    "sex": "sex",
+    "height": "height",
+    "weight": "weight",
+    "BMI": "BMI",
+    "RR_total": "Respiratory rate total average",
+    "RR_n12": "Respiratory rate below 12 bpm total",
+    "RR_n20": "Respiratory rate above 20 bpm total",
+    "RR_w15minMV": "Respiratory rate within last 15 min MV",
+    "RR_w15min": "Respiratory rate within last 15 min",
+    "SpO2_total": "SpO2 total",
+    "SpO2_w15min": "SpO2 within last 15 min",
+    "SpO2_n90": "SpO2 below 90% total",
+    "SpO2_w15minMV": "SpO2 within last 15 min MV",
+    "data_vent": "Ventilator use",
+    "HR_n30": "Heart rate below 30 bpm total",
+    "HR_n60": "Heart rate below 60 bpm total",
+    "HR_n100": "Heart rate above 100 bpm total",
+    "HR_total": "Heart rate total",
+    "HR_w15minMV": "Heart rate within last 15 min MV",
+    "value_eph": "Ephedrine use",
+    "value_phe": "Phenylephrine use",
+    "value_vaso": "vasopressin use",
+    "value_ino": "Inotropes use",
+    "has_aline": "Aline",
+    "FFP": "Fresh frozen plasma",
+    "RBC": "Red blood cell count",
+    "under36": "Temperature below 36 degrees celsius total",
+    "over38": "Temperature above 38 degrees celsius total",
+    "differencebetween15min": "Temperature difference from first 15 min to last 15 min degrees celsius",
+    "prept": "Prothrombin time",
+    "preaptt": "Activated partial thromboplastin time",
+    "prehb": "hemoglobin",
+    "preplt": "platelet count",
+    "prek": "Potassium",
+    "prena": "Sodium",
+    "preca": "Calcium",
+    "preop_dm": "Diabetis diagnosis",
+    "preop_htn": "hypertension",
+    "asa": "ASA score",
+    "cancer": "Cancer diagnosis",
+    "General surgery": "General surgery",
+    "Thoracic surgery": "Thoracic surgery",
+    "Urology": "Urology",
+    "Gynecology": "Gynecology",
+    "generalAnesthesia": "general anesthesia",
+    "spinalAnesthesia": "spinal anesthesia",
+    "sedationalgesia": "sedation algesia",
+    "anesthesia_duration": "anesthesia duration minutes",
+    "op_duration_min": "operation duration minutes",
+}
+
 # Page title
 st.markdown("# Variables Affecting the Prediction")
-
-# Display selected patient
 st.markdown(f"### Selected: {st.session_state.patient_option}")
 
 st.write("This page offers an overview of the variables affecting the prediction of ICU admission. The importance of each variable is determined by the underlying machine learning algorithm, and therefore it might not match the physiological importance.")
@@ -44,7 +96,8 @@ st.pyplot(fig)
 
 # Function to generate background color
 def colorize(val):
-    score = patient_shap.get(val, 0)
+    original_name = [k for k, v in feature_name_map.items() if v == val]
+    score = patient_shap.get(original_name[0], 0) if original_name else 0
     norm_score = (score + 1) / 2
     color = sns.color_palette("coolwarm", as_cmap=True)(norm_score)
     return f'background-color: rgba({int(color[0]*255)}, {int(color[1]*255)}, {int(color[2]*255)}, 0.7)'
@@ -54,53 +107,54 @@ st.markdown("#### Summary of Most Important Variables for Prediction")
 
 # Sort variables by absolute SHAP value and get top 5
 top_vars = sorted(patient_shap.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
-imp_vars = [var for var, val in top_vars]
+imp_vars = [feature_name_map.get(var, var) for var, _ in top_vars]
 
 df_imp = pd.DataFrame({"Important Variables": imp_vars})
 styled_imp = df_imp.style.applymap(colorize).hide(axis="index")
 st.write(styled_imp)
 
-# Create two columns: left for content, right for patient name
+# Create two columns
 col1, col2 = st.columns([1, 1])
 
 # ----------------- DEMOGRAPHIC VARIABLES -----------------
 with col1:
     st.markdown("#### Demographic Variables")
     demo_vars = ["age", "sex", "height", "weight", "BMI"]
-    df_demo = pd.DataFrame({"Demographic": demo_vars})
+    demo_labels = [feature_name_map[v] for v in demo_vars]
+    df_demo = pd.DataFrame({"Demographic": demo_labels})
     styled_demo = df_demo.style.applymap(colorize).hide(axis="index")
     st.write(styled_demo)
 
     # ----------------- PERIOPERATIVE VARIABLES -----------------
     st.markdown("#### Perioperative Variables")
-    data_dict_var_peri = {
-        "Respiratory": ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "RR_w15min", "SpO2_total", "SpO2_w15min", "SpO2_n90", "SpO2_w15minMV", "data_vent", "", "", "", "", ""],
-        "Circulatory": ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"],
-    }
-    data_peri = pd.DataFrame.from_dict(data_dict_var_peri)
-    data_peri.reset_index(drop=True, inplace=True)
+    resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "RR_w15min", "SpO2_total", "SpO2_w15min", "SpO2_n90", "SpO2_w15minMV", "data_vent", "", "", "", "", ""]
+    circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"]
+    data_peri = pd.DataFrame({
+        "Respiratory": [feature_name_map.get(v, v) if v else "" for v in resp_vars],
+        "Circulatory": [feature_name_map.get(v, v) if v else "" for v in circ_vars]
+    })
     styled_table_peri = data_peri.style.applymap(colorize).hide(axis="index")
     st.write(styled_table_peri)
 
 # ----------------- PREOPERATIVE VARIABLES -----------------
 with col2:
     st.markdown("#### Preoperative Variables")
-    data_dict_var_pre = {
-        "Circulatory": ["prept", "preaptt", "prehb", "preplt"],
-        "Renal": ["prek", "prena", "preca", ""]
-    }
-    data_pre = pd.DataFrame.from_dict(data_dict_var_pre)
-    data_pre.reset_index(drop=True, inplace=True)
+    circ_pre = ["prept", "preaptt", "prehb", "preplt"]
+    renal_pre = ["prek", "prena", "preca", ""]
+    data_pre = pd.DataFrame({
+        "Circulatory": [feature_name_map.get(v, v) if v else "" for v in circ_pre],
+        "Renal": [feature_name_map.get(v, v) if v else "" for v in renal_pre]
+    })
     styled_table_pre = data_pre.style.applymap(colorize).hide(axis="index")
     st.write(styled_table_pre)
 
     # ----------------- OTHER VARIABLES -----------------
     st.markdown("#### Other Variables")
-    data_dict_var_others = {
-        "Others": ["preop_dm", "preop_htn", "asa", "cancer", "", "", "", "", ""],
-        "Surgical": ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
-    }
-    df_others = pd.DataFrame.from_dict(data_dict_var_others)
-    df_others.reset_index(drop=True, inplace=True)
+    other_vars = ["preop_dm", "preop_htn", "asa", "cancer", "", "", "", "", ""]
+    surg_vars = ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
+    df_others = pd.DataFrame({
+        "Others": [feature_name_map.get(v, v) if v else "" for v in other_vars],
+        "Surgical": [feature_name_map.get(v, v) if v else "" for v in surg_vars]
+    })
     styled_others = df_others.style.applymap(colorize).hide(axis="index")
     st.write(styled_others)
