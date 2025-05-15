@@ -1,111 +1,65 @@
 import pandas as pd
 import joblib
 import shap
-from sklearn.metrics import (
-    brier_score_loss,
-    accuracy_score,
-    roc_auc_score,
-    roc_curve,
-    precision_score,
-    recall_score,
-    f1_score
-)
 import matplotlib.pyplot as plt
 import os
 
 # Ensure Machine folder exists
 os.makedirs("Machine", exist_ok=True)
 
-# Load test features and labels
-df_data_features = pd.read_csv("TestTrainingSet/test_ids_pre.csv")
-df_data_labels = pd.read_csv("For_machinelearning/number_of_days_in_ICU.csv")
+# Load test features only
+df_test = pd.read_csv("TestTrainingSet/test_ids_pre&peri.csv")
 
-# Merge on 'caseid'
-df_merged = df_data_features.merge(df_data_labels, on="caseid")
-
-# Drop 'icu_days' column if it exists
-df_merged = df_merged.drop(columns=['icu_days'], errors='ignore')
-
-# Define features (X) and labels (y)
-X = df_merged.drop(columns=["icu_days_binary"])
-y = df_merged["icu_days_binary"]
+# Remove columns not used for training if they exist
+for col in ['icu_days_binary', 'subjectid']:
+    if col in df_test.columns:
+        df_test = df_test.drop(columns=[col])
 
 # Save case IDs if present
-case_ids = X["caseid"] if "caseid" in X.columns else None
+case_ids = df_test["caseid"] if "caseid" in df_test.columns else None
 
 # Drop 'caseid' if present
-if 'caseid' in X.columns:
-    X = X.drop(columns=['caseid'])
+if 'caseid' in df_test.columns:
+    X_test = df_test.drop(columns=['caseid'])
+else:
+    X_test = df_test.copy()
 
-# Load the saved model
-model = joblib.load('Machine/best_xgboost_model_pre.joblib')
+# Check feature names from the model
+model = joblib.load('Machine/best_xgboost_model_preperi.joblib')
+model_features = model.get_booster().feature_names
 
-# Predict probabilities and class labels
-y_pred_proba = model.predict_proba(X)[:, 1]
-y_pred = model.predict(X)
+# Select only model features from test set (to be safe)
+X_test = X_test[model_features]
 
-# Evaluation metrics
-brier = brier_score_loss(y, y_pred_proba)
-accuracy = accuracy_score(y, y_pred)
-auc = roc_auc_score(y, y_pred_proba)
-precision = precision_score(y, y_pred)
-recall = recall_score(y, y_pred)
-f1 = f1_score(y, y_pred)
+# Now you can predict safely
+y_pred_proba = model.predict_proba(X_test)[:, 1]
+y_pred = model.predict(X_test)
 
-# Print metrics
-print(f"Brier score: {brier:.4f}")
-print(f"Accuracy: {accuracy:.4f}")
-print(f"AUC: {auc:.4f}")
-print(f"Precision: {precision:.4f}")
-print(f"Recall: {recall:.4f}")
-print(f"F1 Score: {f1:.4f}")
+# Save predicted probabilities and labels along with case IDs
+preds_df = pd.DataFrame({
+    "caseid": case_ids if case_ids is not None else range(len(y_pred)),
+    "predicted_probability": y_pred_proba,
+    "predicted_label": y_pred
+})
+preds_df.to_csv("Machine/test_predictions.csv", index=False)
+print("Predictions saved to Machine/test_predictions.csv")
 
-# Plot ROC curve
-fpr, tpr, _ = roc_curve(y, y_pred_proba)
-plt.figure(figsize=(6, 6))
-plt.plot(fpr, tpr, label=f'AUC = {auc:.2f}')
-plt.plot([0, 1], [0, 1], 'k--')
-plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate")
-plt.title("ROC Curve")
-plt.legend(loc="lower right")
-plt.grid(True)
-plt.tight_layout()
-plt.show()
+# Optional: Calculate SHAP values for test features
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(X_test)
 
-# # Calculate SHAP values
-# explainer = shap.TreeExplainer(model)
-# shap_values = explainer.shap_values(X)
+# Handle shap values for binary classification (list)
+if isinstance(shap_values, list):
+    shap_values_positive_class = shap_values[1]
+else:
+    shap_values_positive_class = shap_values
 
-# # Check if shap_values is a list (it usually is for binary classification)
-# if isinstance(shap_values, list):
-#     shap_values_positive_class = shap_values[1]  # Class 1
-# else:
-#     shap_values_positive_class = shap_values  # Might happen in multiclass or other setups
-
-# # DEBUG: Print the shape of SHAP values and X
-# print(f"SHAP shape: {shap_values_positive_class.shape}, X shape: {X.shape}")
-
-# # Validate dimensions
-# if shap_values_positive_class.shape == X.shape:
-#     shap_values_df = pd.DataFrame(shap_values_positive_class, columns=X.columns)
-    
-#     # Add 'caseid' if available
-#     if case_ids is not None:
-#         shap_values_df.insert(0, "caseid", case_ids)
-
-#     # Save to CSV
-#     shap_values_df.to_csv("Machine/shap_values.csv", index=False)
-#     print("SHAP values saved to Machine/shap_values.csv")
-# else:
-#     raise ValueError("SHAP values shape does not match feature matrix X. Please inspect manually.")
-
-# # Save predicted probabilities to CSV
-# preds_df = pd.DataFrame({
-#     "caseid": case_ids if case_ids is not None else range(len(y)),
-#     "true_label": y,
-#     "predicted_probability": y_pred_proba,
-#     "predicted_label": y_pred
-# })
-# preds_df.to_csv("Machine/test_predictions.csv", index=False)
-# print("Predictions saved to Machine/test_predictions.csv")
+# Check shape before saving SHAP values
+if shap_values_positive_class.shape == X_test.shape:
+    shap_values_df = pd.DataFrame(shap_values_positive_class, columns=X_test.columns)
+    if case_ids is not None:
+        shap_values_df.insert(0, "caseid", case_ids)
+    shap_values_df.to_csv("Machine/shap_values.csv", index=False)
+    print("SHAP values saved to Machine/shap_values.csv")
+else:
+    print("Warning: SHAP values shape does not match test feature matrix shape.")
