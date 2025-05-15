@@ -1,7 +1,7 @@
-# Import libraries
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -12,54 +12,39 @@ from sklearn.metrics import (
     f1_score, roc_auc_score, confusion_matrix,
     precision_recall_curve, average_precision_score
 )
+# Load pre-split train and test sets
+df_train = pd.read_csv("TestTrainingSet/train_ids_pre&peri.csv")
+df_test = pd.read_csv("TestTrainingSet/test_ids_pre&peri.csv")  # <-- adjust path
 
-# Load csv file with features 
-df_data_features = pd.read_csv("df_extracted_features.csv")
-df_data_labels = pd.read_csv("For_machinelearning/number_of_days_in_ICU.csv")
+# Drop identifiers and extract features/labels
+X_train = df_train.drop(columns=["caseid", "icu_days_binary", "subjectid"])
+y_train = df_train["icu_days_binary"]
 
-# Extract features and labels
-X = df_data_features
-y = df_data_labels["icu_days_binary"]
+X_test = df_test.drop(columns=["caseid", "icu_days_binary", "subjectid"])
+y_test = df_test["icu_days_binary"]
 
-# Merge labels with caseid for stratified splitting
-df_labels = df_data_labels.copy()
-df_labels["caseid"] = df_data_features["caseid"]
-case_labels = df_labels[["caseid", "icu_days_binary"]].drop_duplicates()
-
-# Stratified split based on ICU label at case level
-train_ids, test_ids = train_test_split(
-    case_labels["caseid"],
-    test_size=0.2,
-    random_state=42,
-    stratify=case_labels["icu_days_binary"]
-)
-
-# Create boolean masks to filter rows by case ID
-train_mask = df_data_features["caseid"].isin(train_ids)
-test_mask = df_data_features["caseid"].isin(test_ids)
-
-# Apply masks to select features and targets, and drop caseid column from features
-X_train = df_data_features[train_mask].drop(columns=["caseid"])
-X_test = df_data_features[test_mask].drop(columns=["caseid"])
-y_train = y[train_mask]
-y_test = y[test_mask]
-
-# Build pipeline: scaling, imputing, then modeling
+# Build pipeline
 pipeline = Pipeline([
-    ('scaler', StandardScaler()),            # <-- Scaler
-    ('imputer', KNNImputer(n_neighbors=15)),  # <-- KNN imputering
+    ('scaler', StandardScaler()),
+    ('imputer', KNNImputer(n_neighbors=15)),
     ('model', XGBClassifier(
-        n_estimators=200,
-        max_depth=4,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        gamma=1,
+        n_estimators=100,
+        max_depth=6,
+        learning_rate=0.3,
+        gamma=0,
         min_child_weight=1,
         eval_metric='logloss',
         random_state=42
     ))
 ])
+
+# Train the model
+pipeline.fit(X_train, y_train)
+
+# Predict and evaluate
+y_pred = pipeline.predict(X_test)
+y_prob = pipeline.predict_proba(X_test)[:, 1]
+
 
 # Train the model
 pipeline.fit(X_train, y_train)
