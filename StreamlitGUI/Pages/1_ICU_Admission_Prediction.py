@@ -17,7 +17,7 @@ probability = 0.8  # fallback if patient not matched
 
 # Map patient names to case IDs
 patient_case_map = {
-    "Åse Sørensen 020865-1448": 5,
+    "Åge Sørensen 020865-1448": 5,
     "Børge Holm 241279-1337": 16,
     "Ida Jensen 040499-1688": 706,
 }
@@ -42,6 +42,8 @@ st.markdown(f"**Timestamp for prediction:** {current_time}")
 
 st.markdown("This is a machine learning based prediction. Always include your own professional assessment. ")
 
+st.markdown("**Color Scale:** Green: < 40%, Orange: 40–60%, Red: > 60%")
+
 # Determine circle color based on probability
 if probability <= 0.40:
     circle_color = 'green'  # 1% - 40% green
@@ -64,5 +66,5 @@ ax.text(0, 0.3, percent_text, fontsize=16, ha='center', va='bottom', fontweight=
 
 st.pyplot(fig)
 
-st.markdown("Green: 0-40%. Yellow: 40-60%. Red: 60-100%.") # MARIAAA
+
 

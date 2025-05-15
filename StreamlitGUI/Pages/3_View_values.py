@@ -13,7 +13,7 @@ st.set_page_config(page_title="Variables", page_icon="📊")
 
 # Map patient names to case IDs
 patient_case_map = {
-    "Åse Sørensen 020865-1448": 5,
+    "Åge Sørensen 020865-1448": 5,
     "Børge Holm 241279-1337": 16,
     "Ida Jensen 040499-1688": 706,
 }

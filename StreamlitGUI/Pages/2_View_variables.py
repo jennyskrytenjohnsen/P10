@@ -9,7 +9,7 @@ st.set_page_config(page_title="Variables", page_icon="📊")
 
 # Map patient names to case IDs
 patient_case_map = {
-    "Åse Sørensen 020865-1448": 5,
+    "Åge Sørensen 020865-1448": 5,
     "Børge Holm 241279-1337": 16,
     "Ida Jensen 040499-1688": 706,
 }
@@ -37,7 +37,7 @@ feature_name_map = {
     "RR_total": "RR total",
     "RR_n12": "RR below 12 bpm",
     "RR_n20": "RR above 20 bpm",
-    "RR_w15minMV": "RR last 15 min MV", # dræb tvillinger MARIA
+    "RR_w15minMV": "RR last 15 min MV", 
     "RR_w15min": "RR last 15 min",
     "SpO2_total": "SpO2 total",
     "SpO2_w15min": "SpO2 last 15 min",
