@@ -51,7 +51,11 @@ def colorize(val):
 
 # ----------------- MOST IMPORTANT VARIABLES -----------------
 st.markdown("#### Summary of Most Important Variables for Prediction")
-imp_vars = ["age", "sex", "height", "weight", "BMI"]
+
+# Sort variables by absolute SHAP value and get top 5
+top_vars = sorted(patient_shap.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
+imp_vars = [var for var, val in top_vars]
+
 df_imp = pd.DataFrame({"Important Variables": imp_vars})
 styled_imp = df_imp.style.applymap(colorize).hide(axis="index")
 st.write(styled_imp)

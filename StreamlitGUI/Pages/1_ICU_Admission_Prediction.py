@@ -1,6 +1,7 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
+from datetime import datetime  # Add this import
 
 st.set_page_config(page_title="Prediction", page_icon="🩺")
 
@@ -34,6 +35,10 @@ if patient_name in patient_case_map:
 
 # Convert probability to percentage text
 percent_text = f"{int(round(probability * 100))}%"
+
+# Display timestamp above the circle
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+st.markdown(f"**Timestamp for prediction:** {current_time}")
 
 # Determine circle color based on probability
 if probability <= 0.40:
