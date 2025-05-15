@@ -37,7 +37,7 @@ feature_name_map = {
     "RR_total": "RR total",
     "RR_n12": "RR below 12 bpm",
     "RR_n20": "RR above 20 bpm",
-    "RR_w15minMV": "RR last 15 min MV",
+    "RR_w15minMV": "RR last 15 min MV", # dræb tvillinger MARIA
     "RR_w15min": "RR last 15 min",
     "SpO2_total": "SpO2 total",
     "SpO2_w15min": "SpO2 last 15 min",
@@ -51,14 +51,14 @@ feature_name_map = {
     "HR_w15minMV": "HR last 15 min MV",
     "value_eph": "Ephedrine use",
     "value_phe": "Phenylephrine use",
-    "value_vaso": "vasopressin use",
+    "value_vaso": "Vasopressin use",
     "value_ino": "Inotropes use",
-    "has_aline": "Aline",
+    "has_aline": "Arterial line",
     "FFP": "FFP",
     "RBC": "RBC",
-    "under36": "Temp below 36",
+    "under36": "Temp below 36", # degrees celsius MARIA
     "over38": "Temp above 38",
-    "differencebetween15min": "Temp difference start/end",
+    "differencebetween15min": "Temp difference start/end operation",
     "prept": "PT",
     "preaptt": "APTT",
     "prehb": "Hemoglobin",
@@ -66,9 +66,9 @@ feature_name_map = {
     "prek": "Potassium",
     "prena": "Sodium",
     "preca": "Calcium",
-    "preop_dm": "Diabetis diagnosis",
+    "preop_dm": "Diabetis mellitus",
     "preop_htn": "Hypertension",
-    "asa": "ASA score",
+    "asa": "ASA PS score",
     "cancer": "Cancer diagnosis",
     "General surgery": "General surgery",
     "Thoracic surgery": "Thoracic surgery",
@@ -83,17 +83,19 @@ feature_name_map = {
 
 # Page title
 st.markdown("# Variables Affecting the Prediction")
-st.markdown(f"### Selected: {st.session_state.patient_option}")
+st.markdown(f"### Selected patient: {st.session_state.patient_option}")
 
-st.write("This page offers an overview of the variables affecting the prediction of ICU admission. The importance of each variable is determined by the underlying machine learning algorithm, and therefore it might not match the physiological importance.")
+st.write("This page offers an overview of the variables affecting the prediction of ICU need certainty. The importance of each variable is determined by the underlying machine learning algorithm, and therefore it might not match the physiological importance.")
+st.write("If a variable has an importance score close to 1, and is colored red, the variable indicates a high certainty of ICU need. On the contrary, if the importance score is closer to -1, and the variable is colored blue, the variable indicates a high certainty of no ICU need. Lastly, if the variable has an importance score close to 0, the variable is colored grey, and has minimal importance for the certainty of ICU need.")
+
 
 # Display timestamp above the circle
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.markdown(f"**Timestamp for prediction:** {current_time}")
 
 # Add color bar legend
-st.markdown("**Importance Scale**")
-fig, ax = plt.subplots(figsize=(8, 0.05))
+st.markdown("**Variable importance scale**")
+fig, ax = plt.subplots(figsize=(8, 0.1))
 cmap = sns.color_palette("coolwarm", as_cmap=True)
 norm = plt.Normalize(-1, 1)
 cb1 = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation='horizontal')
@@ -108,7 +110,7 @@ def colorize(val):
     return f'background-color: rgba({int(color[0]*255)}, {int(color[1]*255)}, {int(color[2]*255)}, 0.7)'
 
 # ----------------- MOST IMPORTANT VARIABLES -----------------
-st.markdown("#### Summary of Most Important Variables for Prediction")
+st.markdown("#### Summary of most important variables for prediction")
 
 # Sort variables by absolute SHAP value and get top 5
 top_vars = sorted(patient_shap.items(), key=lambda x: abs(x[1]), reverse=True)[:5]

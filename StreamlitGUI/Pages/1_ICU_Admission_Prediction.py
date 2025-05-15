@@ -6,11 +6,11 @@ from datetime import datetime  # Add this import
 st.set_page_config(page_title="Prediction", page_icon="🩺")
 
 # Main content
-st.markdown("# Risk of ICU Admission")
+st.markdown("# Certainty of ICU need")
 
 # Display the selected patient's name
 patient_name = st.session_state.patient_option
-st.markdown(f"## Selected: {patient_name}")
+st.markdown(f"### Selected patient: {patient_name}")
 
 # Default probability
 probability = 0.8  # fallback if patient not matched
@@ -40,6 +40,8 @@ percent_text = f"{int(round(probability * 100))}%"
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.markdown(f"**Timestamp for prediction:** {current_time}")
 
+st.markdown("This is a machine learning based prediction. Always include your own professional assessment. ")
+
 # Determine circle color based on probability
 if probability <= 0.40:
     circle_color = 'green'  # 1% - 40% green
@@ -61,3 +63,6 @@ ax.axis('off')
 ax.text(0, 0.3, percent_text, fontsize=16, ha='center', va='bottom', fontweight='bold', color='black')
 
 st.pyplot(fig)
+
+st.markdown("Green: 0-40%. Yellow: 40-60%. Red: 60-100%.") # MARIAAA
+

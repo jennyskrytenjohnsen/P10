@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 
+# MARIA fix age og asa decimaler
+# RR below 12 bpm: 181 % FIX
+# Temp below 36: 9383 %
+
 st.set_page_config(page_title="Variables", page_icon="📊")
 
 # Map patient names to case IDs
@@ -51,13 +55,13 @@ feature_name_map = {
     "HR_n30": "HR below 30 bpm",
     "HR_n60": "HR below 60 bpm",
     "HR_n100": "HR above 100 bpm",
-    "HR_total": "HR",
+    "HR_total": "HR total",
     "HR_w15minMV": "HR last 15 min MV",
     "value_eph": "Ephedrine use",
     "value_phe": "Phenylephrine use",
-    "value_vaso": "vasopressin use",
+    "value_vaso": "Vasopressin use",
     "value_ino": "Inotropes use",
-    "has_aline": "Aline",
+    "has_aline": "Arterial line",
     "FFP": "FFP",
     "RBC": "RBC",
     "under36": "Temp below 36",
@@ -70,9 +74,9 @@ feature_name_map = {
     "prek": "Potassium",
     "prena": "Sodium",
     "preca": "Calcium",
-    "preop_dm": "Diabetis diagnosis",
+    "preop_dm": "Diabetis mellitus",
     "preop_htn": "Hypertension",
-    "asa": "ASA score",
+    "asa": "ASA PS score",
     "cancer": "Cancer diagnosis",
     "General surgery": "General surgery",
     "Thoracic surgery": "Thoracic surgery",
@@ -129,34 +133,44 @@ def format_value(var, val):
         "preca": "mmol/L",
         "FFP": "units",
         "RBC": "units",
-        "under36": "°C",
-        "over38": "°C",
-        "differencebetween15min": "°C",
     }
 
-    if var.startswith("RR") or var.startswith("HR"):
+    percent_vars = [
+        "RR_n12", "RR_n20",
+        "SpO2_n90",
+        "HR_n30", "HR_n60", "HR_n100",
+        "under36", "over38"
+    ]
+
+    if var in percent_vars:
+        return f"{val * 100:.0f} %"
+    elif var == "differencebetween15min":
+        return f"{val:.2f} °C"
+    elif var.startswith("RR") or var.startswith("HR"):
         return f"{val:.1f} bpm"
     elif var.startswith("SpO2"):
         return f"{val:.1f} %"
     elif var in units:
         return f"{val:.2f} {units[var]}" if isinstance(val, float) else f"{val} {units[var]}"
-    # elif var in ["anesthesia_duration", "op_duration_min"]:
-    #     return f"{int(val)} min"
-    elif var in ["anesthesia_duration", "op_duration_min"]:
+    elif var in ["anesthesia_duration"]:
+        hours = val / 3600
+        return f"{hours:.1f} hours"
+    elif var in ["op_duration_min"]:
         hours = val / 60
         return f"{hours:.1f} hours"
     else:
         return str(val)
 
-st.markdown("# Variables Affecting the Prediction")
-st.markdown(f"### Selected: {st.session_state.patient_option}")
-st.write("This page offers an overview of the variables affecting the prediction of ICU admission. The importance of each variable is determined by the underlying machine learning algorithm, and therefore it might not match the physiological importance.")
+st.markdown("# Variable values affecting the prediction")
+st.markdown(f"### Selected patient: {st.session_state.patient_option}")
+st.write("This page offers an overview of the variables affecting the prediction of ICU need certainty. The importance of each variable is determined by the underlying machine learning algorithm, and therefore it might not match the physiological importance.")
+st.write("If a variable has an importance score close to 1, and is colored red, the variable indicates a high certainty of ICU need. On the contrary, if the importance score is closer to -1, and the variable is colored blue, the variable indicates a high certainty of no ICU need. Lastly, if the variable has an importance score close to 0, the variable is colored grey, and has minimal importance for the certainty of ICU need.")
 
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.markdown(f"**Timestamp for prediction:** {current_time}")
 
 st.markdown("**Importance Scale**")
-fig, ax = plt.subplots(figsize=(8, 0.05))
+fig, ax = plt.subplots(figsize=(8, 0.1))
 cmap = sns.color_palette("coolwarm", as_cmap=True)
 norm = plt.Normalize(-1, 1)
 plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation='horizontal')
