@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-from datetime import datetime  # Add this import
+from datetime import datetime
 
 st.set_page_config(page_title="Variables", page_icon="📊")
 
@@ -37,18 +37,16 @@ feature_name_map = {
     "RR_total": "RR total",
     "RR_n12": "RR below 12 bpm",
     "RR_n20": "RR above 20 bpm",
-    "RR_w15minMV": "RR last 15 min MV", 
-    "RR_w15min": "RR last 15 min",
+    "RR_w15minMV": "RR last 15 min",
     "SpO2_total": "SpO2 total",
-    "SpO2_w15min": "SpO2 last 15 min",
     "SpO2_n90": "SpO2 below 90%",
-    "SpO2_w15minMV": "SpO2 last 15 min MV",
+    "SpO2_w15minMV": "SpO2 last 15 min",
     "data_vent": "Ventilator use",
     "HR_n30": "HR below 30 bpm",
     "HR_n60": "HR below 60 bpm",
     "HR_n100": "HR above 100 bpm",
     "HR_total": "HR",
-    "HR_w15minMV": "HR last 15 min MV",
+    "HR_w15minMV": "HR last 15 min",
     "value_eph": "Ephedrine use",
     "value_phe": "Phenylephrine use",
     "value_vaso": "Vasopressin use",
@@ -56,7 +54,7 @@ feature_name_map = {
     "has_aline": "Arterial line",
     "FFP": "FFP",
     "RBC": "RBC",
-    "under36": "Temp below 36", # degrees celsius MARIA
+    "under36": "Temp below 36",
     "over38": "Temp above 38",
     "differencebetween15min": "Temp difference start/end operation",
     "prept": "PT",
@@ -81,69 +79,52 @@ feature_name_map = {
     "op_duration_min": "Operation duration"
 }
 
-# Page title
+# Remove excluded variables
+excluded_vars = ["RR_w15min", "SpO2_w15min", "HR_w15min"]
+patient_shap = {k: v for k, v in patient_shap.items() if k not in excluded_vars}
+
+# Headline
 st.markdown("# Variables Affecting the Prediction")
+
+# Selected patient and timestamp
 st.markdown(f"### Selected patient: {st.session_state.patient_option}")
-
-st.write("This page offers an overview of the variables affecting the prediction of ICU need certainty. The importance of each variable is determined by the underlying machine learning algorithm, and therefore it might not match the physiological importance.")
-st.write("If a variable has an importance score close to 1, and is colored red, the variable indicates a high certainty of ICU need. On the contrary, if the importance score is closer to -1, and the variable is colored blue, the variable indicates a high certainty of no ICU need. Lastly, if the variable has an importance score close to 0, the variable is colored grey, and has minimal importance for the certainty of ICU need.")
-
-
-# Display timestamp above the circle
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.markdown(f"**Timestamp for prediction:** {current_time}")
 
-# Add color bar legend
-st.markdown("**Variable importance scale**")
-fig, ax = plt.subplots(figsize=(8, 0.1))
-cmap = sns.color_palette("coolwarm", as_cmap=True)
-norm = plt.Normalize(-1, 1)
-cb1 = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation='horizontal')
-st.pyplot(fig)
+# Introductory explanation
+st.write("This page offers an overview of the variables affecting the prediction of ICU need certainty. The importance of each variable is determined by the underlying machine learning algorithm.")
+st.write("If a variable has an importance score close to 1, and is colored red, it indicates a high certainty of ICU need. If the score is closer to -1, it is blue, indicating high certainty of no ICU need. Scores close to 0 are grey, indicating minimal importance.")
 
-# Function to generate background color
+# Color function
+cmap = sns.color_palette("coolwarm", as_cmap=True)
 def colorize(val):
     original_name = [k for k, v in feature_name_map.items() if v == val]
     score = patient_shap.get(original_name[0], 0) if original_name else 0
     norm_score = (score + 1) / 2
-    color = sns.color_palette("coolwarm", as_cmap=True)(norm_score)
+    color = cmap(norm_score)
     return f'background-color: rgba({int(color[0]*255)}, {int(color[1]*255)}, {int(color[2]*255)}, 0.7)'
 
-# ----------------- MOST IMPORTANT VARIABLES -----------------
-st.markdown("#### Summary of most important variables for prediction")
+# Color bar legend
+st.markdown("**Variable importance scale**")
+fig, ax = plt.subplots(figsize=(8, 0.1))
+norm = plt.Normalize(-1, 1)
+cb1 = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), cax=ax, orientation='horizontal')
+st.pyplot(fig)
 
-# Sort variables by absolute SHAP value and get top 5
+# Top 5 important variables
+st.markdown("#### Summary of most important variables for prediction")
 top_vars = sorted(patient_shap.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
 imp_vars = [feature_name_map.get(var, var) for var, _ in top_vars]
-
 df_imp = pd.DataFrame({"Important Variables": imp_vars})
-styled_imp = df_imp.style.applymap(colorize).hide(axis="index")
-st.write(styled_imp)
+st.write(df_imp.style.applymap(colorize).hide(axis="index"))
 
-# Create two columns
-col1, col2 = st.columns([1, 1])
-
-# ----------------- DEMOGRAPHIC VARIABLES -----------------
-
+# Demographic Variables
 st.markdown("#### Demographic Variables")
 demo_vars = ["age", "sex", "height", "weight", "BMI"]
 demo_labels = [feature_name_map[v] for v in demo_vars]
-df_demo = pd.DataFrame({"Demographic": demo_labels})
-styled_demo = df_demo.style.applymap(colorize).hide(axis="index")
-st.write(styled_demo)
+st.write(pd.DataFrame({"Demographic": demo_labels}).style.applymap(colorize).hide(axis="index"))
 
-# ----------------- PERIOPERATIVE VARIABLES -----------------
-st.markdown("#### Perioperative Variables")
-resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "RR_w15min", "SpO2_total", "SpO2_w15min", "SpO2_n90", "SpO2_w15minMV", "data_vent", "", "", "", "", ""]
-circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"]
-data_peri = pd.DataFrame({
-    "Respiratory": [feature_name_map.get(v, v) if v else "" for v in resp_vars],
-    "Circulatory": [feature_name_map.get(v, v) if v else "" for v in circ_vars]
-})
-styled_table_peri = data_peri.style.applymap(colorize).hide(axis="index")
-st.write(styled_table_peri)
-
-# ----------------- PREOPERATIVE VARIABLES -----------------
+# Preoperative Variables
 st.markdown("#### Preoperative Variables")
 circ_pre = ["prept", "preaptt", "prehb", "preplt"]
 renal_pre = ["prek", "prena", "preca", ""]
@@ -151,16 +132,30 @@ data_pre = pd.DataFrame({
     "Circulatory": [feature_name_map.get(v, v) if v else "" for v in circ_pre],
     "Renal": [feature_name_map.get(v, v) if v else "" for v in renal_pre]
 })
-styled_table_pre = data_pre.style.applymap(colorize).hide(axis="index")
-st.write(styled_table_pre)
+st.write(data_pre.style.applymap(colorize).hide(axis="index"))
 
-# ----------------- OTHER VARIABLES -----------------
+# Perioperative Variables
+st.markdown("#### Perioperative Variables")
+resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "SpO2_total", "SpO2_n90", "SpO2_w15minMV", "data_vent"]
+circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso"]
+max_len = max(len(resp_vars), len(circ_vars))
+resp_vars += [""] * (max_len - len(resp_vars))
+circ_vars += [""] * (max_len - len(circ_vars))
+data_peri = pd.DataFrame({
+    "Respiratory": [feature_name_map.get(v, v) if v else "" for v in resp_vars],
+    "Circulatory": [feature_name_map.get(v, v) if v else "" for v in circ_vars]
+})
+st.write(data_peri.style.applymap(colorize).hide(axis="index"))
+
+# Other Variables
 st.markdown("#### Other Variables")
-other_vars = ["preop_dm", "preop_htn", "asa", "cancer", "", "", "", "", ""]
+other_vars = ["preop_dm", "preop_htn", "asa", "cancer"]
 surg_vars = ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
+max_len = max(len(other_vars), len(surg_vars))
+other_vars += [""] * (max_len - len(other_vars))
+surg_vars += [""] * (max_len - len(surg_vars))
 df_others = pd.DataFrame({
     "Others": [feature_name_map.get(v, v) if v else "" for v in other_vars],
     "Surgical": [feature_name_map.get(v, v) if v else "" for v in surg_vars]
 })
-styled_others = df_others.style.applymap(colorize).hide(axis="index")
-st.write(styled_others)
+st.write(df_others.style.applymap(colorize).hide(axis="index"))
