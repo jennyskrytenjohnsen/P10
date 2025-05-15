@@ -16,11 +16,8 @@ patient_case_map = {
 
 # Load SHAP values
 shap_df = pd.read_csv("Machine/shap_values.csv")
-
-# Load values from CSV (source of variable values to display)
 values_df = pd.read_csv(r"TestTrainingSet/test_ids_pre&peri.csv")
 
-# Get current case ID
 case_id = patient_case_map.get(st.session_state.patient_option)
 
 if case_id is not None and case_id in shap_df["caseid"].values:
@@ -30,13 +27,11 @@ else:
     st.error("Patient not found or invalid case ID.")
     st.stop()
 
-# Find the row with this case_id in values_df
 if case_id not in values_df["caseid"].values:
     st.error("Case ID not found in values CSV.")
     st.stop()
 row_values = values_df[values_df["caseid"] == case_id].iloc[0]
 
-# Feature name mapping
 feature_name_map = {
     "age": "Age",
     "sex": "Sex",
@@ -90,16 +85,13 @@ feature_name_map = {
     "op_duration_min": "Operation duration"
 }
 
-# Add default SHAP value = 0 for placeholder variables
 for placeholder in [""] * 10:
     patient_shap[placeholder] = 0
 
 def format_value(var, val):
     if pd.isna(val):
         return "N/A"
-    
 
-    # Binary categorical values mapping
     binary_mappings = {
         "sex": {0: "female", 1: "male"},
         "data_vent": {0: "no", 1: "yes"},
@@ -123,32 +115,46 @@ def format_value(var, val):
     if var in binary_mappings:
         return binary_mappings[var].get(val, "N/A")
 
-    if var == "age":
-        return f"{int(val)} years"
-    elif var in ["height", "weight"]:
-        return f"{val:.1f}"
+    units = {
+        "age": "years",
+        "height": "cm",
+        "weight": "kg",
+        "BMI": "kg/m²",
+        "prept": "%",
+        "preaptt": "s",
+        "prehb": "g/dL",
+        "preplt": "×10³/µL",
+        "prek": "mmol/L",
+        "prena": "mmol/L",
+        "preca": "mmol/L",
+        "FFP": "units",
+        "RBC": "units",
+        "under36": "°C",
+        "over38": "°C",
+        "differencebetween15min": "°C",
+    }
+
+    if var.startswith("RR") or var.startswith("HR"):
+        return f"{val:.1f} bpm"
+    elif var.startswith("SpO2"):
+        return f"{val:.1f} %"
+    elif var in units:
+        return f"{val:.2f} {units[var]}" if isinstance(val, float) else f"{val} {units[var]}"
+    # elif var in ["anesthesia_duration", "op_duration_min"]:
+    #     return f"{int(val)} min"
     elif var in ["anesthesia_duration", "op_duration_min"]:
-        return f"{int(val)} min"
-    elif var.startswith("RR") or var.startswith("HR") or var.startswith("SpO2"):
-        return f"{val:.1f}"
-    elif var in ["prept", "preaptt", "prehb", "preplt", "prek", "prena", "preca"]:
-        return f"{val:.2f}"
-    elif var in ["value_eph", "value_phe", "value_vaso", "value_ino"]:
-        return f"{val:.1f}"
+        hours = val / 60
+        return f"{hours:.1f} hours"
     else:
         return str(val)
 
-# Title and intro
 st.markdown("# Variables Affecting the Prediction")
 st.markdown(f"### Selected: {st.session_state.patient_option}")
-
 st.write("This page offers an overview of the variables affecting the prediction of ICU admission. The importance of each variable is determined by the underlying machine learning algorithm, and therefore it might not match the physiological importance.")
 
-# Display timestamp above the circle
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.markdown(f"**Timestamp for prediction:** {current_time}")
 
-# SHAP color bar
 st.markdown("**Importance Scale**")
 fig, ax = plt.subplots(figsize=(8, 0.05))
 cmap = sns.color_palette("coolwarm", as_cmap=True)
@@ -174,7 +180,7 @@ def name_and_value(var):
     val_str = format_value(var, val_raw)
     return f"{name}: {val_str}"
 
-# ----------------- MOST IMPORTANT VARIABLES -----------------
+# Top 5 variables
 st.markdown("#### Summary of Most Important Variables for Prediction")
 top_vars = sorted(patient_shap.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
 imp_vars = [name_and_value(var) for var, _ in top_vars]
@@ -185,62 +191,52 @@ df_imp = pd.DataFrame({"Important Variables": imp_vars})
 styled_imp = df_imp.style.applymap(colorize).hide(axis="index")
 st.write(styled_imp)
 
-# ----------------- DEMOGRAPHIC VARIABLES -----------------
+# Demographic
 col1, col2 = st.columns([1, 1])
-with col1:
-    st.markdown("#### Demographic Variables")
-    demo_vars = ["age", "sex", "height", "weight", "BMI"]
-    demo_vals = [name_and_value(v) for v in demo_vars]
-    df_demo = pd.DataFrame({"Demographic": demo_vals})
-    styled_demo = df_demo.style.applymap(colorize).hide(axis="index")
-    st.write(styled_demo)
 
-    # ----------------- PERIOPERATIVE VARIABLES -----------------
-    st.markdown("#### Perioperative Variables")
-    resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "RR_w15min", "SpO2_total", "SpO2_w15min", "SpO2_n90", "SpO2_w15minMV", "data_vent"]
-    circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"]
+st.markdown("#### Demographic Variables")
+demo_vars = ["age", "sex", "height", "weight", "BMI"]
+demo_vals = [name_and_value(v) for v in demo_vars]
+df_demo = pd.DataFrame({"Demographic": demo_vals})
+styled_demo = df_demo.style.applymap(colorize).hide(axis="index")
+st.write(styled_demo)
 
-    # Pad lists to equal length
-    max_len = max(len(resp_vars), len(circ_vars))
-    resp_vars += [""] * (max_len - len(resp_vars))
-    circ_vars += [""] * (max_len - len(circ_vars))
+st.markdown("#### Perioperative Variables")
+resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "RR_w15min", "SpO2_total", "SpO2_w15min", "SpO2_n90", "SpO2_w15minMV", "data_vent"]
+circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"]
+max_len = max(len(resp_vars), len(circ_vars))
+resp_vars += [""] * (max_len - len(resp_vars))
+circ_vars += [""] * (max_len - len(circ_vars))
+data_peri = pd.DataFrame({
+    "Respiratory": [name_and_value(v) for v in resp_vars],
+    "Circulatory": [name_and_value(v) for v in circ_vars]
+})
+styled_table_peri = data_peri.style.applymap(colorize).hide(axis="index")
+st.write(styled_table_peri)
 
-    data_peri = pd.DataFrame({
-        "Respiratory": [name_and_value(v) for v in resp_vars],
-        "Circulatory": [name_and_value(v) for v in circ_vars]
-    })
-    styled_table_peri = data_peri.style.applymap(colorize).hide(axis="index")
-    st.write(styled_table_peri)
 
-# ----------------- PREOPERATIVE VARIABLES -----------------
-with col2:
-    st.markdown("#### Preoperative Variables")
-    circ_pre = ["prept", "preaptt", "prehb", "preplt"]
-    renal_pre = ["prek", "prena", "preca"]
-    # Pad to same length
-    max_len = max(len(circ_pre), len(renal_pre))
-    circ_pre += [""] * (max_len - len(circ_pre))
-    renal_pre += [""] * (max_len - len(renal_pre))
+st.markdown("#### Preoperative Variables")
+circ_pre = ["prept", "preaptt", "prehb", "preplt"]
+renal_pre = ["prek", "prena", "preca"]
+max_len = max(len(circ_pre), len(renal_pre))
+circ_pre += [""] * (max_len - len(circ_pre))
+renal_pre += [""] * (max_len - len(renal_pre))
+data_pre = pd.DataFrame({
+    "Circulatory": [name_and_value(v) for v in circ_pre],
+    "Renal": [name_and_value(v) for v in renal_pre]
+})
+styled_table_pre = data_pre.style.applymap(colorize).hide(axis="index")
+st.write(styled_table_pre)
 
-    data_pre = pd.DataFrame({
-        "Circulatory": [name_and_value(v) for v in circ_pre],
-        "Renal": [name_and_value(v) for v in renal_pre]
-    })
-    styled_table_pre = data_pre.style.applymap(colorize).hide(axis="index")
-    st.write(styled_table_pre)
-
-    # ----------------- OTHER VARIABLES -----------------
-    st.markdown("#### Other Variables")
-    other_vars = ["preop_dm", "preop_htn", "asa", "cancer"]
-    surg_vars = ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
-    # Pad both columns
-    max_len = max(len(other_vars), len(surg_vars))
-    other_vars += [""] * (max_len - len(other_vars))
-    surg_vars += [""] * (max_len - len(surg_vars))
-
-    df_others = pd.DataFrame({
-        "Others": [name_and_value(v) for v in other_vars],
-        "Surgical": [name_and_value(v) for v in surg_vars]
-    })
-    styled_others = df_others.style.applymap(colorize).hide(axis="index")
-    st.write(styled_others)
+st.markdown("#### Other Variables")
+other_vars = ["preop_dm", "preop_htn", "asa", "cancer"]
+surg_vars = ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
+max_len = max(len(other_vars), len(surg_vars))
+other_vars += [""] * (max_len - len(other_vars))
+surg_vars += [""] * (max_len - len(surg_vars))
+df_others = pd.DataFrame({
+    "Others": [name_and_value(v) for v in other_vars],
+    "Surgical": [name_and_value(v) for v in surg_vars]
+})
+styled_others = df_others.style.applymap(colorize).hide(axis="index")
+st.write(styled_others)

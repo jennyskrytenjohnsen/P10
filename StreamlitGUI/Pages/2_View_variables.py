@@ -122,44 +122,43 @@ st.write(styled_imp)
 col1, col2 = st.columns([1, 1])
 
 # ----------------- DEMOGRAPHIC VARIABLES -----------------
-with col1:
-    st.markdown("#### Demographic Variables")
-    demo_vars = ["age", "sex", "height", "weight", "BMI"]
-    demo_labels = [feature_name_map[v] for v in demo_vars]
-    df_demo = pd.DataFrame({"Demographic": demo_labels})
-    styled_demo = df_demo.style.applymap(colorize).hide(axis="index")
-    st.write(styled_demo)
 
-    # ----------------- PERIOPERATIVE VARIABLES -----------------
-    st.markdown("#### Perioperative Variables")
-    resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "RR_w15min", "SpO2_total", "SpO2_w15min", "SpO2_n90", "SpO2_w15minMV", "data_vent", "", "", "", "", ""]
-    circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"]
-    data_peri = pd.DataFrame({
-        "Respiratory": [feature_name_map.get(v, v) if v else "" for v in resp_vars],
-        "Circulatory": [feature_name_map.get(v, v) if v else "" for v in circ_vars]
-    })
-    styled_table_peri = data_peri.style.applymap(colorize).hide(axis="index")
-    st.write(styled_table_peri)
+st.markdown("#### Demographic Variables")
+demo_vars = ["age", "sex", "height", "weight", "BMI"]
+demo_labels = [feature_name_map[v] for v in demo_vars]
+df_demo = pd.DataFrame({"Demographic": demo_labels})
+styled_demo = df_demo.style.applymap(colorize).hide(axis="index")
+st.write(styled_demo)
+
+# ----------------- PERIOPERATIVE VARIABLES -----------------
+st.markdown("#### Perioperative Variables")
+resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "RR_w15min", "SpO2_total", "SpO2_w15min", "SpO2_n90", "SpO2_w15minMV", "data_vent", "", "", "", "", ""]
+circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"]
+data_peri = pd.DataFrame({
+    "Respiratory": [feature_name_map.get(v, v) if v else "" for v in resp_vars],
+    "Circulatory": [feature_name_map.get(v, v) if v else "" for v in circ_vars]
+})
+styled_table_peri = data_peri.style.applymap(colorize).hide(axis="index")
+st.write(styled_table_peri)
 
 # ----------------- PREOPERATIVE VARIABLES -----------------
-with col2:
-    st.markdown("#### Preoperative Variables")
-    circ_pre = ["prept", "preaptt", "prehb", "preplt"]
-    renal_pre = ["prek", "prena", "preca", ""]
-    data_pre = pd.DataFrame({
-        "Circulatory": [feature_name_map.get(v, v) if v else "" for v in circ_pre],
-        "Renal": [feature_name_map.get(v, v) if v else "" for v in renal_pre]
-    })
-    styled_table_pre = data_pre.style.applymap(colorize).hide(axis="index")
-    st.write(styled_table_pre)
+st.markdown("#### Preoperative Variables")
+circ_pre = ["prept", "preaptt", "prehb", "preplt"]
+renal_pre = ["prek", "prena", "preca", ""]
+data_pre = pd.DataFrame({
+    "Circulatory": [feature_name_map.get(v, v) if v else "" for v in circ_pre],
+    "Renal": [feature_name_map.get(v, v) if v else "" for v in renal_pre]
+})
+styled_table_pre = data_pre.style.applymap(colorize).hide(axis="index")
+st.write(styled_table_pre)
 
-    # ----------------- OTHER VARIABLES -----------------
-    st.markdown("#### Other Variables")
-    other_vars = ["preop_dm", "preop_htn", "asa", "cancer", "", "", "", "", ""]
-    surg_vars = ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
-    df_others = pd.DataFrame({
-        "Others": [feature_name_map.get(v, v) if v else "" for v in other_vars],
-        "Surgical": [feature_name_map.get(v, v) if v else "" for v in surg_vars]
-    })
-    styled_others = df_others.style.applymap(colorize).hide(axis="index")
-    st.write(styled_others)
+# ----------------- OTHER VARIABLES -----------------
+st.markdown("#### Other Variables")
+other_vars = ["preop_dm", "preop_htn", "asa", "cancer", "", "", "", "", ""]
+surg_vars = ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
+df_others = pd.DataFrame({
+    "Others": [feature_name_map.get(v, v) if v else "" for v in other_vars],
+    "Surgical": [feature_name_map.get(v, v) if v else "" for v in surg_vars]
+})
+styled_others = df_others.style.applymap(colorize).hide(axis="index")
+st.write(styled_others)
