@@ -17,9 +17,9 @@ probability = 0.8  # fallback if patient not matched
 
 # Map patient names to case IDs
 patient_case_map = {
-    "Åse Sørensen 020865-1448": 20,
-    "Børge Holm 241279-1337": 76,
-    "Ida Jensen 040499-1688": 87
+    "Åse Sørensen 020865-1448": 5,
+    "Børge Holm 241279-1337": 16,
+    "Ida Jensen 040499-1688": 706,
 }
 
 # If selected patient is in the map, try to read the corresponding probability
