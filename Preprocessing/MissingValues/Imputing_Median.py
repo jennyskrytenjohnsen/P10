@@ -2,10 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import KNNImputer
 from xgboost import XGBClassifier
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
     f1_score, roc_auc_score, confusion_matrix,
@@ -14,7 +12,7 @@ from sklearn.metrics import (
 
 # Load pre-split train and test sets
 df_train = pd.read_csv("TestTrainingSet/train_ids_pre&peri.csv")
-df_test = pd.read_csv("TestTrainingSet/test_ids_pre&peri.csv")
+df_test = pd.read_csv("TestTrainingSet/test_ids_pre&peri.csv")  # This file is now confirmed
 
 # Drop identifiers and extract features/labels
 X_train = df_train.drop(columns=["caseid", "icu_days_binary", "subjectid"])
@@ -23,27 +21,27 @@ y_train = df_train["icu_days_binary"]
 X_test = df_test.drop(columns=["caseid", "icu_days_binary", "subjectid"])
 y_test = df_test["icu_days_binary"]
 
-# Build pipeline: Scaling → KNN Imputer → XGBoost Model
-pipeline = Pipeline([
-    ('scaler', StandardScaler()),
-    ('imputer', KNNImputer(n_neighbors=15)),  # Try tuning k if needed
-    ('model', XGBClassifier(
-        n_estimators=100,
-        max_depth=6,
-        learning_rate=0.3,
-        gamma=0,
-        min_child_weight=1,
-        eval_metric='logloss',
-        random_state=42
-    ))
-])
+# Impute missing values using median
+median_imputer = SimpleImputer(strategy='median')
+X_train_imputed = median_imputer.fit_transform(X_train)
+X_test_imputed = median_imputer.transform(X_test)
 
-# Train the model
-pipeline.fit(X_train, y_train)
+# Train XGBoost model
+model = XGBClassifier(
+    n_estimators=100,
+    max_depth=6,
+    learning_rate=0.3,
+    gamma=0,
+    min_child_weight=1,
+    eval_metric='logloss',
+    random_state=42
+)
+
+model.fit(X_train_imputed, y_train)
 
 # Predict
-y_pred = pipeline.predict(X_test)
-y_prob = pipeline.predict_proba(X_test)[:, 1]
+y_pred = model.predict(X_test_imputed)
+y_prob = model.predict_proba(X_test_imputed)[:, 1]
 
 # Evaluate
 precision, recall, _ = precision_recall_curve(y_test, y_prob)
