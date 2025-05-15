@@ -45,18 +45,16 @@ feature_name_map = {
     "RR_total": "RR total",
     "RR_n12": "RR below 12 bpm",
     "RR_n20": "RR above 20 bpm",
-    "RR_w15minMV": "RR last 15 min MV",
-    "RR_w15min": "RR last 15 min",
+    "RR_w15minMV": "RR last 15 min",
     "SpO2_total": "SpO2 total",
-    "SpO2_w15min": "SpO2 last 15 min",
     "SpO2_n90": "SpO2 below 90%",
-    "SpO2_w15minMV": "SpO2 last 15 min MV",
+    "SpO2_w15minMV": "SpO2 last 15 min",
     "data_vent": "Ventilator use",
     "HR_n30": "HR below 30 bpm",
     "HR_n60": "HR below 60 bpm",
     "HR_n100": "HR above 100 bpm",
     "HR_total": "HR total",
-    "HR_w15minMV": "HR last 15 min MV",
+    "HR_w15minMV": "HR last 15 min",
     "value_eph": "Ephedrine use",
     "value_phe": "Phenylephrine use",
     "value_vaso": "Vasopressin use",
@@ -216,7 +214,7 @@ styled_demo = df_demo.style.applymap(colorize).hide(axis="index")
 st.write(styled_demo)
 
 st.markdown("#### Perioperative Variables")
-resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "RR_w15min", "SpO2_total", "SpO2_w15min", "SpO2_n90", "SpO2_w15minMV", "data_vent"]
+resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "SpO2_total", "SpO2_n90", "SpO2_w15minMV", "data_vent"]
 circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"]
 max_len = max(len(resp_vars), len(circ_vars))
 resp_vars += [""] * (max_len - len(resp_vars))
