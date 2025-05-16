@@ -12,7 +12,7 @@ from sklearn.metrics import brier_score_loss
 os.makedirs('Machine', exist_ok=True)
 
 # Load dataset
-df = pd.read_csv("TestTrainingSet/train_ids_pre.csv")
+df = pd.read_csv("TestTrainingSet/train_ids_pre&peri.csv")
 
 # Define label (y) and drop from features
 y = df["icu_days_binary"]
@@ -56,7 +56,7 @@ xg_clf = xgb.XGBClassifier(objective="binary:logistic", random_state=42, eval_me
 # Define hyperparameter space
 param_dist = {
     'learning_rate': np.linspace(0.01, 0.3, 30),
-    'n_estimators': np.arange(50, 151, 25),  # e.g. [50, 75, 100, 125, 150]
+    'n_estimators': np.arange(50, 151, 25), 
     'max_depth': np.arange(3, 15),
     'min_child_weight': np.arange(1, 10),
     'gamma': np.linspace(0, 5, 6)
@@ -97,14 +97,14 @@ for i in range(random_search.n_iter):
 
 # Save results to CSV
 results_df = pd.DataFrame(results)
-results_df.to_csv('Machine/xgboost_random_search_results_pre.csv', index=False)
+results_df.to_csv('Machine/xgboost_random_search_results_preperi.csv', index=False)
 
 # Print result preview
 print(results_df.head())
 
 # Save best model
 best_model = random_search.best_estimator_
-model_path = 'Machine/best_xgboost_model_pre.joblib'
+model_path = 'Machine/best_xgboost_model_preperi.joblib'
 joblib.dump(best_model, model_path)
 print(f"Best model saved to {model_path}")
 
@@ -175,7 +175,7 @@ for i in range(1, num_rounds + 1):
     brier_scores.append(brier)
 
 # Plot log loss and Brier score with twin y-axes
-fig, ax1 = plt.subplots(figsize=(10, 6))
+fig, ax1 = plt.subplots(figsize=(6, 4))
 
 color1 = 'tab:blue'
 ax1.set_xlabel('Boosting Rounds')
@@ -191,9 +191,9 @@ ax2.set_ylabel('Brier Score', color=color2)
 ax2.plot(range(1, num_rounds + 1), brier_scores, label='Brier Score', color=color2, marker='x')
 ax2.tick_params(axis='y', labelcolor=color2)
 
-fig.suptitle("Best Model Log Loss and Brier Score vs Boosting Rounds")
+fig.suptitle(" ")
 fig.tight_layout(rect=[0, 0, 1, 0.95])
 
 # Save and show the plot
-plt.savefig("Machine/best_model_logloss_brier_curve.png")
+plt.savefig("Machine/best_model_logloss_brier_curve_preperi.png")
 plt.show()
