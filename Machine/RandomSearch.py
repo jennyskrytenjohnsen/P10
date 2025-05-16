@@ -56,7 +56,7 @@ xg_clf = xgb.XGBClassifier(objective="binary:logistic", random_state=42, eval_me
 # Define hyperparameter space
 param_dist = {
     'learning_rate': np.linspace(0.01, 0.3, 30),
-    'n_estimators': np.arange(50, 300, 50),
+    'n_estimators': np.arange(50, 151, 25),  # e.g. [50, 75, 100, 125, 150]
     'max_depth': np.arange(3, 15),
     'min_child_weight': np.arange(1, 10),
     'gamma': np.linspace(0, 5, 6)
@@ -69,7 +69,7 @@ random_search = RandomizedSearchCV(
     n_iter=100,
     cv=5,
     verbose=2,
-    random_state=42,
+    random_state=11,
     n_jobs=-1,
     scoring='neg_brier_score'
 )
