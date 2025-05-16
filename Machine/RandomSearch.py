@@ -153,13 +153,47 @@ logloss_values = eval_result['validation_0']['logloss']
 # Plot log loss vs number of trees
 import matplotlib.pyplot as plt
 
-plt.figure(figsize=(8, 5))
-plt.plot(logloss_values, label='Log Loss', marker='o')
-plt.title("Best Model")
-plt.xlabel("Boosting Rounds")
-plt.ylabel("Log Loss")
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.savefig("Machine/best_model_logloss_curve.png")
+# plt.figure(figsize=(8, 5))
+# plt.plot(logloss_values, label='Log Loss', marker='o')
+# plt.title("Best Model")
+# plt.xlabel("Boosting Rounds")
+# plt.ylabel("Log Loss")
+# plt.legend()
+# plt.grid(True)
+# plt.tight_layout()
+# plt.savefig("Machine/best_model_logloss_curve.png")
+# plt.show()
+
+# Calculate Brier score for each boosting round
+num_rounds = len(logloss_values)
+brier_scores = []
+
+for i in range(1, num_rounds + 1):
+    # Predict probabilities using the first i trees
+    y_pred_proba_iter = best_model_eval.predict_proba(X_test, iteration_range=(0, i))[:, 1]
+    brier = brier_score_loss(y_test, y_pred_proba_iter)
+    brier_scores.append(brier)
+
+# Plot log loss and Brier score with twin y-axes
+fig, ax1 = plt.subplots(figsize=(10, 6))
+
+color1 = 'tab:blue'
+ax1.set_xlabel('Boosting Rounds')
+ax1.set_ylabel('Log Loss', color=color1)
+ax1.plot(range(1, num_rounds + 1), logloss_values, label='Log Loss', color=color1, marker='o')
+ax1.tick_params(axis='y', labelcolor=color1)
+ax1.grid(True)
+
+ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+color2 = 'tab:orange'
+ax2.set_ylabel('Brier Score', color=color2)
+ax2.plot(range(1, num_rounds + 1), brier_scores, label='Brier Score', color=color2, marker='x')
+ax2.tick_params(axis='y', labelcolor=color2)
+
+fig.suptitle("Best Model Log Loss and Brier Score vs Boosting Rounds")
+fig.tight_layout(rect=[0, 0, 1, 0.95])
+
+# Save and show the plot
+plt.savefig("Machine/best_model_logloss_brier_curve.png")
 plt.show()
