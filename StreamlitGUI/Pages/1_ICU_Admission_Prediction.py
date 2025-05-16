@@ -26,7 +26,7 @@ patient_case_map = {
 if patient_name in patient_case_map:
     case_id = patient_case_map[patient_name]
     try:
-        df = pd.read_csv("Machine/test_predictions.csv")
+        df = pd.read_csv("Machine/test_predictions_preperi.csv")
         prob = df.loc[df["caseid"] == case_id, "predicted_probability"].values
         if len(prob) > 0:
             probability = float(prob[0])
