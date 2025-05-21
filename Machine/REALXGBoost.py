@@ -7,12 +7,14 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     brier_score_loss, confusion_matrix, roc_curve, auc, precision_recall_curve
 )
+from sklearn.metrics import precision_recall_curve, auc
+import matplotlib.pyplot as plt
 
 # Ensure Machine folder exists
 os.makedirs("Machine", exist_ok=True)
 
 # Load test features only
-df_test = pd.read_csv("TestTrainingSet/test_ids_pre.csv") #ÆNDRE HER FOR pre vs preperi
+df_test = pd.read_csv("TestTrainingSet/test_ids_pre.csv") #ÆNDRE HER FOR pre vs pre&peri
 
 # Remove columns not used for training if they exist
 for col in ['icu_days_binary', 'subjectid']:
@@ -49,8 +51,8 @@ preds_df.to_csv("Machine/test_predictions_pre.csv", index=False) #ÆNDRE HER FOR
 print("Predictions saved to Machine/test_predictions_pre.csv") #ÆNDRE HER FOR pre vs preperi
 
 # If true labels exist in original test data, evaluate performance
-if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns: #ÆNDRE HER FOR pre vs preperi
-    df_with_labels = pd.read_csv("TestTrainingSet/test_ids_pre.csv") #ÆNDRE HER FOR pre vs preperi
+if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns: #ÆNDRE HER FOR pre vs pre&peri
+    df_with_labels = pd.read_csv("TestTrainingSet/test_ids_pre.csv") #ÆNDRE HER FOR pre vs pre&peri
     y_true = df_with_labels.loc[X_test.index, 'icu_days_binary']
 
     # Metrics
@@ -65,6 +67,36 @@ if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns:
     sensitivity = tp / (tp + fn)
     specificity = tn / (tn + fp)
 
+        # Confusion Matrix Plot
+    cm = confusion_matrix(y_true, y_pred)
+    fig, ax = plt.subplots(figsize=(4, 3))
+    im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    ax.figure.colorbar(im, ax=ax)
+    classes = ['Negative', 'Positive']
+    tick_marks = range(len(classes))
+    ax.set(
+        xticks=tick_marks,
+        yticks=tick_marks,
+        xticklabels=classes,
+        yticklabels=classes,
+        ylabel='True label',
+        xlabel='Predicted label',
+        title=''
+    )
+
+    # Loop over data dimensions and create text annotations.
+    thresh = cm.max() / 2.
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, format(cm[i, j], 'd'),
+                    ha="center", va="center",
+                    color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    # plt.savefig("Machine/confusion_matrix.png")
+    plt.show()
+
+
     print("\nPerformance Metrics:")
     print(f"Accuracy:  {acc:.4f}")
     print(f"Precision: {prec:.4f}")
@@ -78,7 +110,7 @@ if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns:
     fpr, tpr, _ = roc_curve(y_true, y_pred_proba)
     roc_auc = auc(fpr, tpr)
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(4, 3))
     plt.plot(fpr, tpr, label=f'ROC curve (AUC = {roc_auc:.2f})')
     plt.plot([0, 1], [0, 1], linestyle='--', color='gray')
     plt.xlabel('False Positive Rate')
@@ -90,14 +122,17 @@ if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns:
     plt.savefig("Machine/roc_curve.png")
     plt.show()
 
-    # Precision-Recall Curve
+    # Compute precision-recall curve and AUC
     precision, recall, _ = precision_recall_curve(y_true, y_pred_proba)
+    pr_auc = auc(recall, precision)
 
-    plt.figure(figsize=(8, 6))
-    plt.plot(recall, precision, label='Precision-Recall Curve')
+# Plot Precision-Recall curve with AUC
+    plt.figure(figsize=(4, 3))
+    plt.plot(recall, precision, label=f'PR Curve (AUC = {pr_auc:.2f})')
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
+    plt.legend(loc='lower left')
     plt.grid(True)
     plt.tight_layout()
     plt.savefig("Machine/precision_recall_curve.png")
