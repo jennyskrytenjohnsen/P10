@@ -6,8 +6,6 @@ import numpy as np
 from datetime import datetime
 
 # MARIA fix age og asa decimaler
-# RR below 12 bpm: 181 % FIX
-# Temp below 36: 9383 %
 
 st.set_page_config(page_title="Variables", page_icon="📊")
 
@@ -137,10 +135,15 @@ def format_value(var, val):
         "RR_n12", "RR_n20",
         "SpO2_n90",
         "HR_n30", "HR_n60", "HR_n100",
-        "under36", "over38"
+        "under36", 
+        "over38"
     ]
 
-    if var in percent_vars:
+    if var == "under36":
+        return f"{val:.0f} %"
+    elif var == "RR_n12":
+        return f"{val:.0f} %"
+    elif var in percent_vars:
         return f"{val * 100:.0f} %"
     elif var == "differencebetween15min":
         return f"{val:.2f} °C"
