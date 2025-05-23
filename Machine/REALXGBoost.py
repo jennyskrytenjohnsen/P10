@@ -3,6 +3,7 @@ import joblib
 import shap
 import matplotlib.pyplot as plt
 import os
+import numpy as np
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     brier_score_loss, confusion_matrix, roc_curve, auc, precision_recall_curve
@@ -106,15 +107,29 @@ if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns:
     print(f"Sensitivity (Recall): {sensitivity:.4f}")
     print(f"Specificity:          {specificity:.4f}")
 
-    # ROC Curve
-    fpr, tpr, _ = roc_curve(y_true, y_pred_proba)
+
+
+    # Compute ROC curve and AUC
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred_proba)
     roc_auc = auc(fpr, tpr)
 
+    # Find the index of the threshold closest to 0.5
+    threshold_idx = np.argmin(np.abs(thresholds - 0.5))
+    fpr_05 = fpr[threshold_idx]
+    tpr_05 = tpr[threshold_idx]
+
+    # Plot the ROC curve
     plt.figure(figsize=(4, 3))
     plt.plot(fpr, tpr, label=f'ROC curve (AUC = {roc_auc:.2f})')
-    plt.plot([0, 1], [0, 1], linestyle='--', color='gray')
+    plt.plot([0, 1], [0, 1], linestyle='--', color='gray', label='Chance')
+
+    # Mark the threshold 0.5 point
+    plt.scatter(fpr_05, tpr_05, color='red', label='Threshold = 0.5')
+    plt.annotate('0.5', (fpr_05, tpr_05), textcoords="offset points", xytext=(10, -10), ha='center')
+
+    # Labels and style
     plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate (Sensitivity)')
+    plt.ylabel('True Positive Rate (Recall)')
     plt.title('ROC Curve')
     plt.legend()
     plt.grid(True)
@@ -122,13 +137,26 @@ if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns:
     plt.savefig("Machine/roc_curve.png")
     plt.show()
 
-    # Compute precision-recall curve and AUC
-    precision, recall, _ = precision_recall_curve(y_true, y_pred_proba)
+
+   # Compute precision-recall curve and AUC
+    precision, recall, thresholds = precision_recall_curve(y_true, y_pred_proba)
     pr_auc = auc(recall, precision)
 
-# Plot Precision-Recall curve with AUC
+    # Find index of threshold closest to 0.5
+    # Note: thresholds has one less element than precision/recall
+    threshold_idx = np.argmin(np.abs(thresholds - 0.5))
+    recall_05 = recall[threshold_idx]
+    precision_05 = precision[threshold_idx]
+
+    # Plot Precision-Recall curve with AUC
     plt.figure(figsize=(4, 3))
     plt.plot(recall, precision, label=f'PR Curve (AUC = {pr_auc:.2f})')
+
+    # Mark the threshold = 0.5 point
+    plt.scatter(recall_05, precision_05, color='red', label='Threshold = 0.5')
+    plt.annotate('0.5', (recall_05, precision_05), textcoords="offset points", xytext=(10, -10), ha='center')
+
+    # Labels and style
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
@@ -137,9 +165,6 @@ if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns:
     plt.tight_layout()
     plt.savefig("Machine/precision_recall_curve.png")
     plt.show()
-else:
-    print("No true labels found in the test data. Performance metrics not computed.")
-
 # Optional: Calculate SHAP values
 explainer = shap.TreeExplainer(model)
 shap_values = explainer.shap_values(X_test)
