@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 os.makedirs("Machine", exist_ok=True)
 
 # Load test features only
-df_test = pd.read_csv("TestTrainingSet/test_ids_pre.csv") #ÆNDRE HER FOR pre vs pre&peri
+df_test = pd.read_csv("TestTrainingSet/test_ids_pre&peri.csv") #ÆNDRE HER FOR pre vs pre&peri
 
 # Remove columns not used for training if they exist
 for col in ['icu_days_binary', 'subjectid']:
@@ -32,7 +32,7 @@ else:
     X_test = df_test.copy()
 
 # Load model and get feature names
-model = joblib.load('Machine/best_xgboost_model_pre.joblib') #ÆNDRE HER FOR pre vs preperi
+model = joblib.load('Machine/best_xgboost_model_preperi.joblib') #ÆNDRE HER FOR pre vs preperi
 model_features = model.get_booster().feature_names
 
 # Ensure test features match model
@@ -48,12 +48,12 @@ preds_df = pd.DataFrame({
     "predicted_probability": y_pred_proba,
     "predicted_label": y_pred
 })
-preds_df.to_csv("Machine/test_predictions_pre.csv", index=False) #ÆNDRE HER FOR pre vs preperi
-print("Predictions saved to Machine/test_predictions_pre.csv") #ÆNDRE HER FOR pre vs preperi
+preds_df.to_csv("Machine/test_predictions_preperi.csv", index=False) #ÆNDRE HER FOR pre vs preperi
+print("Predictions saved to Machine/test_predictions_preperi.csv") #ÆNDRE HER FOR pre vs preperi
 
 # If true labels exist in original test data, evaluate performance
-if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns: #ÆNDRE HER FOR pre vs pre&peri
-    df_with_labels = pd.read_csv("TestTrainingSet/test_ids_pre.csv") #ÆNDRE HER FOR pre vs pre&peri
+if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre&peri.csv").columns: #ÆNDRE HER FOR pre vs pre&peri
+    df_with_labels = pd.read_csv("TestTrainingSet/test_ids_pre&peri.csv") #ÆNDRE HER FOR pre vs pre&peri
     y_true = df_with_labels.loc[X_test.index, 'icu_days_binary']
 
     # Metrics
@@ -68,11 +68,15 @@ if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns:
     sensitivity = tp / (tp + fn)
     specificity = tn / (tn + fp)
 
-        # Confusion Matrix Plot
-    cm = confusion_matrix(y_true, y_pred)
+    # Normalized Confusion Matrix
+    cm = confusion_matrix(y_true, y_pred, normalize='true')  # normalize by row (true label)
+
+    # Plot
     fig, ax = plt.subplots(figsize=(4, 3))
-    im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues, vmin=0, vmax=1)
     ax.figure.colorbar(im, ax=ax)
+
+    # Axis labels and ticks
     classes = ['Negative', 'Positive']
     tick_marks = range(len(classes))
     ax.set(
@@ -82,21 +86,21 @@ if 'icu_days_binary' in pd.read_csv("TestTrainingSet/test_ids_pre.csv").columns:
         yticklabels=classes,
         ylabel='True label',
         xlabel='Predicted label',
-        title=''
+        title='Normalized Confusion Matrix'
     )
 
-    # Loop over data dimensions and create text annotations.
+    # Add values to cells
+    fmt = '.2f'
     thresh = cm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            ax.text(j, i, format(cm[i, j], 'd'),
+            ax.text(j, i, format(cm[i, j], fmt),
                     ha="center", va="center",
                     color="white" if cm[i, j] > thresh else "black")
 
     plt.tight_layout()
-    # plt.savefig("Machine/confusion_matrix.png")
+    plt.savefig("Machine/confusion_matrix_normalized.png")
     plt.show()
-
 
     print("\nPerformance Metrics:")
     print(f"Accuracy:  {acc:.4f}")
@@ -179,7 +183,7 @@ if shap_values_positive_class.shape == X_test.shape:
     shap_values_df = pd.DataFrame(shap_values_positive_class, columns=X_test.columns)
     if case_ids is not None:
         shap_values_df.insert(0, "caseid", case_ids)
-    shap_values_df.to_csv("Machine/shap_values_pre.csv", index=False) #ÆNDRE HER FOR pre vs preperi
-    print("SHAP values saved to Machine/shap_values_pre.csv") #ÆNDRE HER FOR pre vs preperi
+    shap_values_df.to_csv("Machine/shap_values_preperi.csv", index=False) #ÆNDRE HER FOR pre vs preperi
+    print("SHAP values saved to Machine/shap_values_preperi.csv") #ÆNDRE HER FOR pre vs preperi
 else:
     print("Warning: SHAP values shape does not match test feature matrix shape.")
