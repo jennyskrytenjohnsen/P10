@@ -14,6 +14,9 @@ patient_case_map = {
     "Åge Sørensen 020859-1447": 5,
     "Børge Holm 241268-1337": 16,
     "Ida Jensen 040464-1688": 706,
+    "Mona Due Bak 161055-9446": 729,
+    "Hanne Holmegård 091288-8446": 328,
+    "Ib Bentsen 081168-6757": 5870,
 }
 
 # Load SHAP values
