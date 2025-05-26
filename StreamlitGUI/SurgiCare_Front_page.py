@@ -20,7 +20,7 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.markdown("### General")
     # Radio buttons for selecting a patient under General
-    st.session_state.patient_option = st.radio("## Select a patient", ("Åge Sørensen 020865-1448", "Børge Holm 241279-1337", "Ida Jensen 040499-1688"))
+    st.session_state.patient_option = st.radio("## Select a patient", ("Åge Sørensen 020859-1447", "Børge Holm 241268-1337", "Ida Jensen 040464-1688"))
     st.write(f"Selected: {st.session_state.patient_option}")
 
 with col2:
