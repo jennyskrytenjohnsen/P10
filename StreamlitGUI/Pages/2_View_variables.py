@@ -222,20 +222,26 @@ df_imp = pd.DataFrame({"Important Variables": imp_vars})
 styled_imp = df_imp.style.applymap(colorize).hide(axis="index")
 st.write(styled_imp)
 
-# Demographic
 st.markdown("#### Demographic Variables")
 demo_vars = ["age", "sex", "height", "weight", "BMI"]
+demo_vars.sort(key=lambda var: abs(patient_shap.get(var, 0)), reverse=True)
 demo_vals = [name_and_value(v, show_values) for v in demo_vars]
 df_demo = pd.DataFrame({"Demographic": demo_vals})
 styled_demo = df_demo.style.applymap(colorize).hide(axis="index")
 st.write(styled_demo)
 
+
 st.markdown("#### Perioperative Variables")
 resp_vars = ["RR_total", "RR_n12", "RR_n20", "RR_w15minMV", "SpO2_total", "SpO2_n90", "SpO2_w15minMV", "data_vent"]
 circ_vars = ["HR_n30", "HR_n60", "HR_n100", "HR_total", "HR_w15minMV", "value_eph", "value_phe", "value_vaso", "value_ino", "has_aline", "FFP", "RBC", "under36", "over38", "differencebetween15min"]
+
+resp_vars.sort(key=lambda var: abs(patient_shap.get(var, 0)), reverse=True)
+circ_vars.sort(key=lambda var: abs(patient_shap.get(var, 0)), reverse=True)
+
 max_len = max(len(resp_vars), len(circ_vars))
 resp_vars += [""] * (max_len - len(resp_vars))
 circ_vars += [""] * (max_len - len(circ_vars))
+
 data_peri = pd.DataFrame({
     "Respiratory": [name_and_value(v, show_values) for v in resp_vars],
     "Circulatory": [name_and_value(v, show_values) for v in circ_vars]
@@ -246,9 +252,14 @@ st.write(styled_table_peri)
 st.markdown("#### Preoperative Variables")
 circ_pre = ["prept", "preaptt", "prehb", "preplt"]
 renal_pre = ["prek", "prena", "preca"]
+
+circ_pre.sort(key=lambda var: abs(patient_shap.get(var, 0)), reverse=True)
+renal_pre.sort(key=lambda var: abs(patient_shap.get(var, 0)), reverse=True)
+
 max_len = max(len(circ_pre), len(renal_pre))
 circ_pre += [""] * (max_len - len(circ_pre))
 renal_pre += [""] * (max_len - len(renal_pre))
+
 data_pre = pd.DataFrame({
     "Circulatory": [name_and_value(v, show_values) for v in circ_pre],
     "Renal": [name_and_value(v, show_values) for v in renal_pre]
@@ -256,12 +267,18 @@ data_pre = pd.DataFrame({
 styled_table_pre = data_pre.style.applymap(colorize).hide(axis="index")
 st.write(styled_table_pre)
 
+
 st.markdown("#### Other Variables")
 other_vars = ["preop_dm", "preop_htn", "asa", "cancer"]
 surg_vars = ["General surgery", "Thoracic surgery", "Urology", "Gynecology", "generalAnesthesia", "spinalAnesthesia", "sedationalgesia", "anesthesia_duration", "op_duration_min"]
+
+other_vars.sort(key=lambda var: abs(patient_shap.get(var, 0)), reverse=True)
+surg_vars.sort(key=lambda var: abs(patient_shap.get(var, 0)), reverse=True)
+
 max_len = max(len(other_vars), len(surg_vars))
 other_vars += [""] * (max_len - len(other_vars))
 surg_vars += [""] * (max_len - len(surg_vars))
+
 df_others = pd.DataFrame({
     "Others": [name_and_value(v, show_values) for v in other_vars],
     "Surgical": [name_and_value(v, show_values) for v in surg_vars]
