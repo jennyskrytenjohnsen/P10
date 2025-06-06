@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 
-# MARIA fix age og asa decimaler
-
 st.set_page_config(page_title="Variables", page_icon="📊")
 
 # Map patient names to case IDs
