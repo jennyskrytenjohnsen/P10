@@ -142,6 +142,9 @@ def format_value(var, val):
         "over38"
     ]
 
+    int_vars = ["age", "preca", "asa", "FFP", "RBC", "prept", "preaptt", "prena", "preplt"]
+    one_decimal_vars = ["height", "weight", "prek"]
+
     if var == "under36":
         return f"{val:.0f} %"
     elif var == "RR_n12":
@@ -154,12 +157,16 @@ def format_value(var, val):
         return f"{val:.1f} bpm"
     elif var.startswith("SpO2"):
         return f"{val:.1f} %"
+    elif var in int_vars:
+        return f"{int(round(val))} {units.get(var, '')}".strip()
+    elif var in one_decimal_vars:
+        return f"{val:.1f} {units.get(var, '')}".strip()
     elif var in units:
         return f"{val:.2f} {units[var]}" if isinstance(val, float) else f"{val} {units[var]}"
-    elif var in ["anesthesia_duration"]:
+    elif var == "anesthesia_duration":
         hours = val / 3600
         return f"{hours:.1f} hours"
-    elif var in ["op_duration_min"]:
+    elif var == "op_duration_min":
         hours = val / 60
         return f"{hours:.1f} hours"
     else:
