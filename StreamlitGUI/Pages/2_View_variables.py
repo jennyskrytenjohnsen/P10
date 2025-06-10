@@ -158,6 +158,9 @@ def format_value(var, val):
     elif var.startswith("SpO2"):
         return f"{val:.1f} %"
     elif var in int_vars:
+        if var == "preca":
+            val = val / 1000  # Fix for calcium scale
+            return f"{val:.2f} {units.get(var, '')}".strip()
         return f"{int(round(val))} {units.get(var, '')}".strip()
     elif var in one_decimal_vars:
         return f"{val:.1f} {units.get(var, '')}".strip()
