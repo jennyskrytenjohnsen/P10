@@ -20,6 +20,7 @@ patient_case_map = {
 # Load SHAP values
 shap_df = pd.read_csv("Machine/shap_values_preperi.csv")
 values_df = pd.read_csv(r"TestTrainingSet/test_ids_pre&peri.csv")
+values_df["preca"] = values_df["preca"] / 1000  # Fix calcium units
 
 case_id = patient_case_map.get(st.session_state.patient_option)
 
